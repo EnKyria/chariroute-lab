@@ -64,7 +64,10 @@ def check_backend() -> int:
 
 
 def check_frontend() -> int:
-    """frontend/ が存在する場合のみ、package.json に定義済みの検証スクリプトを実行する。"""
+    """frontend/ が存在する場合のみ、package.json に定義済みの検証スクリプトを実行する。
+
+    依存のインストール（`npm ci`）は環境構築として利用者・CI 側で行い、ここでは実行しない。
+    """
     package_json = FRONTEND / "package.json"
     if not package_json.exists():
         return EXIT_OK
@@ -78,7 +81,7 @@ def check_frontend() -> int:
     scripts = json.loads(package_json.read_text(encoding="utf-8")).get("scripts", {})
     results = [
         run(f"npm {name}", [npm, "run", name], FRONTEND)
-        for name in ("lint", "typecheck", "test")
+        for name in ("lint", "typecheck", "test", "build")
         if name in scripts
     ]
     return EXIT_OK if all(results) else EXIT_FAILED
