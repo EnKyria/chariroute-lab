@@ -287,6 +287,8 @@ A = B の組は除外し、全ての (A, B) の中で合計が最小の組を採
 | `format.ts` | 分・距離・日時（日本時間）の表示形式 |
 
 ### 画面の状態
+（PHASE 4 時点の記録。PHASE 4.5 で、おすすめ・比較・徒歩のみの表示は廃止し、503 は種類ごとに区別して表示する。現在の状態は §9.7 と §10）
+
 | 状態 | 表示 |
 |---|---|
 | 初期 | 案内文 |
@@ -437,7 +439,7 @@ A = B の組は除外し、全ての (A, B) の中で合計が最小の組を採
 **実測にもとづく変更**：
 - **タイムアウト**：仕様の「リクエストごとに 4 秒、検索全体で 20 秒」では、自転車の Table が毎回 503 になる。そこで、Table を 15 秒、Route を 4 秒（据え置き）、検索全体を 25 秒にした（`app/outbound.py`、`main.py`）。
   - 内訳の目安：待機 1.1 秒 × 5 + Table 約 11 秒 + Route 約 2 秒 ≒ 19 秒。
-  - 最初は 30 秒にしたが、reviewer の指摘で 25 秒にした。API Gateway HTTP API の統合タイムアウトの上限は 30 秒（reviewer の指摘。AWS の公式資料での確認は PHASE 6）なので、締め切りより先に API Gateway が 504 を返さないようにするため。PHASE 6 では Lambda のタイムアウトを 30 秒にする。
+  - 最初は 30 秒にしたが、reviewer の指摘で 25 秒にした。API Gateway HTTP API の統合タイムアウトの上限は 30 秒（reviewer の指摘。AWS の公式資料での確認は PHASE 6）なので、締め切りより先に API Gateway が 504 を返さないようにするため。PHASE 6 では Lambda のタイムアウトを 30 秒にする。→ **28 秒に変更**（公式資料で上限 30 秒・引き上げ不可を確認。§11、plan §7.2）。
   - 遅いときに締め切りを超えることが多いなら、候補の数を減らして（例：各 6 件）Table を軽くする。
   - フロントには 35 秒の通信タイムアウト（AbortController）を付け、504 は「道路の経路を時間内に取得できませんでした」と表示する。
   - 画面の読み込み中の表示を「最大 30 秒ほどかかることがあります」にした。
@@ -475,3 +477,47 @@ A = B の組は除外し、全ての (A, B) の中で合計が最小の組を採
 | なんば駅 | 4 | 約 1.2 秒 | 4 件とも名前が「なんば」で、表示名は「蔵前通」「御堂筋」「千日前通」「四つ橋筋」。**駅そのものではなく、道路などの地物が返った**と推測している（type は見ていない）。座標はどれも難波駅の周辺（約 300 m 以内） |
 - 応答の形式（jsonv2、`lat`/`lon` は文字列、`name`、`display_name`）は、実装の想定と一致した。
 - **精度の課題**：駅名で検索しても、駅ではない地物が上位に来ることがある。名前が同じ候補が並ぶため、表示名（label）で区別する必要がある。改善案（MVP の後）は、`category`/`type` で駅（railway=station）を優先する、`featureType` を指定する、など。ユーザーの指示で、今回は改善しない。
+
+## 10. PHASE 5：ローカル結合確認（2026-11-25、セッション 6）
+
+- **実 API に接続しないで、ブラウザの結合確認をした**：正常系は PHASE 4.5 のユーザー受入テストで確認済みなので、残りは異常系と表示の確認だった。異常系は実 API では再現しにくく、再現しようとすると FOSSGIS にリクエストを繰り返すことになる。そこで、API をスタブ（標準ライブラリの使い捨てサーバー）に置き換え、シナリオを切り替えて確認した。Vite の proxy と画面はそのまま使うので、「API の応答 → 画面の表示」の結合を確かめられる。サーバー側の判定（締め切り、エリア外、経路なし）は、pytest のテストで担保している。
+- **Chrome 拡張に接続できないときは、ヘッドレスの Chrome を DevTools Protocol で操作した**：Node 22 の標準の `WebSocket` だけで書けるので、依存（Playwright など）を追加せずに済んだ。専用の一時プロファイルで起動し、ユーザーのプロファイルには触れていない。`Emulation.setDeviceMetricsOverride`（幅 360 / 390px）、`setTouchEmulationEnabled`（タッチ）、`Browser.setPermission` と `setGeolocationOverride`（位置情報の拒否・取得不可・東京）、`Network.setBlockedURLs`（外部への通信の遮断）を使った。数値（`scrollWidth`、ボタンの矩形の重なり、高さ）で判定し、スクリーンショットで目視した。
+  - 限界：エミュレーションなので、実機のブラウザ（iOS Safari のスクロールの挙動、位置情報の許可ダイアログ）までは保証しない。実機で確かめる項目は progress.md に分けて書いた。
+  - 最初のスクリプトは、地図が画面外にある状態で座標を計算したため、ドラッグとタップが地図に届かなかった。`scrollIntoView` してから座標を取るように直した。**自動の確認が失敗したときは、アプリより先に確認手順を疑う。**
+- **現在地のキャッシュ**：`maximumAge: 30 秒` のため、30 秒以内に再取得すると、エミュレーションで位置を変えても前の位置が返った。仕様どおりの挙動で、歩く速さでは誤差が小さいので変えていない。
+- **地図の配色**（ユーザーの依頼）：返却ポート（オレンジ）と目的地（赤）は色相が近い。色相だけでなく明度（明るいオレンジ / 濃い赤）と枠線（濃い茶色・太め / 白）でも区別した。色だけに頼らない区別は、色覚の多様性への配慮にもなる。さらに、出発地・目的地を大きく先に描き、ポートを上に重ねて、重なったときも両方が見えるようにした。
+
+## 11. PHASE 6 の準備：AWS の公式資料の調査（2026-11-25、セッション 6、aws-expert）
+
+計画は `docs/plan.md` §7。ここには、判断の根拠と出典を残す。
+
+**判断に影響した事実**：
+- **AWS の資料は、Python 3.12 以降の Lambda 向けに `manylinux_2_28_x86_64` を指定するよう案内している**（`manylinux2014` の案内は Python 3.11 以前の Amazon Linux 2 向け）。メイン（Claude）が aws-expert への依頼文に書いたのは `manylinux2014` だった。
+  - ただし、これは `manylinux2014` の wheel が Python 3.12 で使えないという意味ではない（ユーザーの指摘、2026-11-25）。manylinux のタグは「その glibc 以上の環境で動く」ことを表すので、古いタグの wheel も新しい環境で動きうる。タグの名前で判断せず、実際に入った wheel のタグ・`.so`・Lambda 上での import で互換性を確かめる（plan §7.4）。
+- **HTTP API の統合タイムアウトは最大 30 秒で、引き上げられない**。PHASE 4.5 で reviewer が指摘した値を、公式資料で確認した。Lambda を 30 秒にすると打ち切りが重なるので、28 秒にした。
+- **予約済み同時実行数は「未予約分 − 100」までしか予約できない**。新規アカウントは上限が引き下げられているので、1 を設定できない可能性がある（具体値は公式で未確認。re:Post に「10」の報告）。PHASE 4.5 で前提にしていた「同時実行数 1 で保証する」設計は、アカウントによっては設定すらできない。
+- **実行環境は、タイムアウト・クラッシュでリセットされ、数時間ごとにも終了される。凍結中の未完了の処理は、再利用時に再開しうる**。古い環境と新しい環境の処理が重ならない、という保証は公式資料にない。
+- HTTP API のスロットリングは best-effort で、上限の保証ではない（PHASE 4.5 の §9.4 と同じ）。
+
+**判断**：
+- 「プロセス内のリミッター + 同時実行数 1」は、通常の運用では規約を守れる見込みが高いが、**保証にはならない**（ユーザーの指示「同時実行数 1 だけで保証とみなさない」とも一致）。保証するには、プロセスの外に状態を持つ必要がある → DynamoDB の条件付き書き込みによるリース。費用は試算で 1,000 検索あたり約 $0.003。
+- それでも、AWS の外のプロセス（ローカルの開発サーバー）との同時利用は、同じリースを使うか運用で避けるしかない。
+- **本番では実 API を既定で無効にしてデプロイし、条件（plan §7.3）が整ってから有効にする**。無効の間も、ダミーを返さず 503 を返す既存の方針で、画面は正しく「取得できない」と表示できる。
+- アクセス制限は、費用がかからない「CloudFront のオリジンのカスタムヘッダー（共有シークレット）+ ミドルウェアでの検証」を採用。WAF は固定費がかかるので見送った。
+
+**未確認のまま残したこと**（実環境で確かめる。plan §7.8 の手順 9）：HTTP API が統合タイムアウト・Lambda の throttle のときに返すステータス（500 / 503 / 504 / 429）、予約済み同時実行数 0 の即時性、CloudFront Functions の料金、新規アカウントの同時実行数の具体値。
+
+**出典**（確認日 2026-11-25）：
+- Lambda のランタイム：https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html
+- Python の .zip パッケージ：https://docs.aws.amazon.com/lambda/latest/dg/python-package.html
+- Lambda のクォータ：https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html 、https://docs.aws.amazon.com/general/latest/gr/lambda-service.html
+- 予約済み同時実行数：https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html 、https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html
+- 実行環境のライフサイクル：https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html
+- リトライ：https://docs.aws.amazon.com/lambda/latest/dg/invocation-retries.html
+- API Gateway からの呼び出しのエラー：https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway-errors.html
+- HTTP API：クォータ https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-quotas.html 、スロットリング https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-throttling.html 、アクセス制御 https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-access-control.html 、既定のエンドポイントの無効化 https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-disable-default-endpoint.html 、ログの変数 https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-logging-variables.html
+- CloudFront：OAC https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html 、マネージドポリシー https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html 、https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-origin-request-policies.html 、https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html 、削除 https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/HowToDeleteDistribution.html
+- 料金：https://aws.amazon.com/lambda/pricing/ 、https://aws.amazon.com/api-gateway/pricing/ 、https://aws.amazon.com/dynamodb/pricing/on-demand/ 、https://aws.amazon.com/waf/pricing/ 、https://aws.amazon.com/cloudfront/pricing/ 、https://aws.amazon.com/cloudwatch/pricing/ 、https://aws.amazon.com/aws-cost-management/aws-budgets/pricing/ 、https://aws.amazon.com/free/
+- 非公式（参考）：https://repost.aws/questions/QUto8jBkZtQfSL-Qr3XEHybg
+
+**AI 駆動開発の知見**：調査を aws-expert に任せ、「事実（出典付き）・未確認・推論」を分けて報告させた。その結果、メインが依頼文に書いた wheel のタグ（`manylinux2014`）と公式の案内（`manylinux_2_28`）の違いが分かった。ただし、その違いを「古いタグは使えない」と言い過ぎていたことは、ユーザーの指摘で訂正した。また、「同時実行数 1 を設定できないアカウントがありうる」という、前提を崩す制約も見つかった。**指示や計画に書かれた技術的な前提も、一次情報で確かめる対象にする。**
