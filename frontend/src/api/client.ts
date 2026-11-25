@@ -14,8 +14,8 @@ const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''
 export type ApiErrorKind =
   | 'input' // 400（不明な地点・同じ地点・エリア外・道路が近くにない）、422（形式エラー）
   | 'gbfs_unavailable' // 503（GBFS の取得失敗）
-  | 'route_unavailable' // 503（OSRM の失敗。道路の経路を取得できない）
-  | 'places_unavailable' // 503（Nominatim の失敗）
+  | 'route_unavailable' // 503（OSRM の失敗・設定で停止中。道路の経路を取得できない）
+  | 'places_unavailable' // 503（Nominatim の失敗・設定で停止中）
   | 'busy' // 503（外部サービスの混雑）、429（API の混雑）
   | 'server' // 上記以外の HTTP エラー
   | 'network' // 通信そのものの失敗
@@ -66,6 +66,15 @@ const UNAVAILABLE: Record<string, { kind: ApiErrorKind; message: string }> = {
   places_unavailable: {
     kind: 'places_unavailable',
     message: '地点を検索できませんでした。しばらくしてから再度お試しください',
+  },
+  // 外部 API への接続を設定で止めている環境（本番の既定。plan §7.3）。ダミーの結果は出さない
+  route_disabled: {
+    kind: 'route_unavailable',
+    message: 'この環境では、道路の経路の検索（外部の経路サービスへの接続）を停止しています',
+  },
+  places_disabled: {
+    kind: 'places_unavailable',
+    message: 'この環境では、地点検索（外部の地点検索サービスへの接続）を停止しています',
   },
   route_busy: { kind: 'busy', message: '混雑しています。しばらくしてから再度お試しください' },
   places_busy: { kind: 'busy', message: '混雑しています。しばらくしてから再度お試しください' },

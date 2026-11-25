@@ -44,9 +44,9 @@ cd frontend && npm ci && cd ..
 ターミナルを 2 つ使います。
 
 ```bash
-# 1. API サーバー（http://127.0.0.1:8000）
+# 1. API サーバー（http://127.0.0.1:8000）。外部の経路・地点検索サービスは、明示的に有効にしたときだけ使う
 cd backend
-.venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+EXTERNAL_APIS_ENABLED=true .venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
 ```bash
@@ -58,6 +58,7 @@ npm run dev
 ブラウザで http://localhost:5173 を開きます（Vite は `localhost` で待ち受けます。環境によっては `127.0.0.1` では開けません）。
 現在地の取得は、HTTPS か `localhost` で開いたページでだけ動きます。API のスキーマは http://127.0.0.1:8000/docs で確認できます。
 
+- **`EXTERNAL_APIS_ENABLED=true` を付けないと**、FOSSGIS の OSRM・Nominatim には送信せず、経路検索と地点検索は 503（「この環境では…停止しています」）になります（本番の既定と同じ。[docs/plan.md](docs/plan.md) §7.3）。`true` 以外の値（`1`・`yes` など）も無効として扱います。
 - API サーバーは、検索のたびに ODPT の GBFS（60 秒間はキャッシュを使う）と FOSSGIS の OSRM（1 回の検索で 5 リクエスト）にアクセスします。インターネットへの接続が必要です。1 回の検索には 15〜20 秒ほどかかります（自転車の Table が約 10 秒かかるため）。
 - **uvicorn は 1 プロセスで動かします**（`--workers` を使わない）。リミッターがプロセスごとなので、複数のプロセスでは 1 秒 1 回を保証できません。
 - **OSRM のスモークテスト（`backend/tools/smoke_osrm.py`）と開発サーバーを同時に動かさないでください**（FOSSGIS への同時接続を 1 つに保つため）。検索ボタンの連打や、自動化した繰り返しの検索もしないでください。
@@ -83,6 +84,8 @@ python scripts/check.py frontend   # frontend だけ
 | `GBFS_BASE_URL` | backend | GBFS の取得先（https のみ）。既定は ODPT の docomo-cycle |
 | `OSRM_FOOT_URL` / `OSRM_BIKE_URL` | backend | OSRM の取得先（https のみ）。既定は `https://routing.openstreetmap.de/routed-foot` / `routed-bike` |
 | `NOMINATIM_URL` | backend | Nominatim の取得先（https のみ）。既定は `https://nominatim.openstreetmap.org` |
+| `EXTERNAL_APIS_ENABLED` | backend | `true` のときだけ OSRM・Nominatim に送信する。**既定（未設定）は無効**。ODPT の GBFS は対象外 |
+| `ORIGIN_VERIFY_SECRET` | backend | CloudFront が付ける `X-Origin-Verify` ヘッダーと照合する共有シークレット（32 文字以上）。設定したとき、または Lambda 上では検証が必須になり、Lambda 上で未設定なら全て 403。ローカルでは通常設定しない |
 | `OUTBOUND_USER_AGENT` | backend | 外部サービスに送る User-Agent。既定は `ChariRoute/0.1 (+https://github.com/EnKyria/chariroute-lab)` |
 | `OUTBOUND_REFERER` | backend | 外部サービスに送る Referer。設定したときだけ付ける（本番の URL が決まったら設定する） |
 | `VITE_API_BASE_URL` | frontend | API のベース URL。空なら同一オリジン（本番は CloudFront、ローカルは Vite の proxy） |
@@ -90,9 +93,19 @@ python scripts/check.py frontend   # frontend だけ
 
 `VITE_` で始まる変数はビルド成果物に含まれ、ブラウザから見えます。秘密の値は入れないでください。
 
+## AWS 用のビルド
+
+```bash
+python scripts/build_lambda.py   # build/lambda.zip（Linux 用の wheel）と build/lambda-report.json
+cd frontend && npm run build     # frontend/dist
+```
+
+デプロイの手順は [docs/deploy.md](docs/deploy.md) にあります（AWS の操作は、手順ごとに承認を得てから行います）。
+
 ## ドキュメント
 
 - [docs/plan.md](docs/plan.md)：設計方針と実装計画
+- [docs/deploy.md](docs/deploy.md)：AWS へのデプロイ・緊急停止・削除の手順
 - [docs/progress.md](docs/progress.md)：進捗と引き継ぎ
 - [docs/engineering-notes.md](docs/engineering-notes.md)：技術選定・設計判断・発生した問題の記録
 

@@ -1,7 +1,9 @@
 """Nominatim の実 API を使った最小限のスモークテスト（手動実行用。pytest には含めない）。
 
 使い方（リポジトリのルートで実行）:
-    backend/.venv/Scripts/python.exe backend/tools/smoke_nominatim.py
+    EXTERNAL_APIS_ENABLED=true backend/.venv/Scripts/python.exe backend/tools/smoke_nominatim.py
+
+外部 API への送信は既定で無効（plan §7.3）。実行するときだけ、上のように明示的に有効にする。
 
 利用条件（docs/engineering-notes.md §9.3・§9.5）を守るため：
 - 検索するのは、公開施設・駅名の 2 語だけ（2 リクエスト）。ループや自動の再実行はしない。

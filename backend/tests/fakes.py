@@ -120,7 +120,10 @@ class FakeOsrm:
 
 def osrm_client(fake: FakeOsrm, clock: ManualClock | None = None) -> OsrmClient:
     clock = clock or ManualClock()
-    return OsrmClient(FOOT_URL, BIKE_URL, RateLimiter(clock=clock, sleep=clock.sleep), fake)
+    # 外部 API の有効・無効は環境変数ではなく、ここで明示的に有効にする
+    # （無効のときのテストは test_deploy.py）
+    return OsrmClient(FOOT_URL, BIKE_URL, RateLimiter(clock=clock, sleep=clock.sleep), fake,
+                      enabled=lambda: True)
 
 
 class FakeNominatim:

@@ -25,6 +25,7 @@ from app.outbound import (
     Fetcher,
     OutboundError,
     RateLimiter,
+    external_apis_enabled,
     http_get_json,
     https_url,
     outbound_headers,
@@ -39,11 +40,12 @@ CACHE_MAX_ENTRIES = 200
 
 
 class PlacesError(Exception):
-    """Nominatim の失敗（503 にする）。"""
+    """Nominatim の失敗（503 にする）。disabled は、設定で外部への送信を止めているとき True。"""
 
-    def __init__(self, message: str, *, busy: bool = False) -> None:
+    def __init__(self, message: str, *, busy: bool = False, disabled: bool = False) -> None:
         super().__init__(message)
         self.busy = busy
+        self.disabled = disabled
 
 
 @dataclass(frozen=True)
@@ -89,13 +91,15 @@ def _parse(body: Any) -> list[Place]:
 class PlacesClient:
     def __init__(self, base_url: str | None = None, limiter: RateLimiter | None = None,
                  fetch: Fetcher = http_get_json, clock: Callable[[], float] = time.monotonic,
-                 timeout: float = REQUEST_TIMEOUT_SECONDS) -> None:
+                 timeout: float = REQUEST_TIMEOUT_SECONDS,
+                 enabled: Callable[[], bool] = external_apis_enabled) -> None:
         self.base_url = https_url(base_url or os.environ.get("NOMINATIM_URL"),
                                   DEFAULT_NOMINATIM_URL, "NOMINATIM_URL")
         self.limiter = limiter or RateLimiter()
         self._fetch = fetch
         self._clock = clock
         self.timeout = timeout
+        self._enabled = enabled  # 送信のたびに確かめる（既定は環境変数。plan §7.3）
         self._cache: OrderedDict[str, tuple[float, list[Place]]] = OrderedDict()
         self._cache_lock = threading.Lock()
 
@@ -118,7 +122,12 @@ class PlacesClient:
                 self._cache.popitem(last=False)
 
     def search(self, q: str) -> list[Place]:
-        """q は呼び出し側で 2〜64 文字に検証済みとする。"""
+        """q は呼び出し側で 2〜64 文字に検証済みとする。
+
+        無効のときは、キャッシュも使わずに PlacesError(disabled=True) にする。
+        """
+        if not self._enabled():
+            raise PlacesError("外部 API への送信は設定で無効です", disabled=True)
         key = normalize_query(q)
         cached = self._cached(key)
         if cached is not None:

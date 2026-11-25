@@ -521,3 +521,53 @@ A = B の組は除外し、全ての (A, B) の中で合計が最小の組を採
 - 非公式（参考）：https://repost.aws/questions/QUto8jBkZtQfSL-Qr3XEHybg
 
 **AI 駆動開発の知見**：調査を aws-expert に任せ、「事実（出典付き）・未確認・推論」を分けて報告させた。その結果、メインが依頼文に書いた wheel のタグ（`manylinux2014`）と公式の案内（`manylinux_2_28`）の違いが分かった。ただし、その違いを「古いタグは使えない」と言い過ぎていたことは、ユーザーの指摘で訂正した。また、「同時実行数 1 を設定できないアカウントがありうる」という、前提を崩す制約も見つかった。**指示や計画に書かれた技術的な前提も、一次情報で確かめる対象にする。**
+
+## 12. PHASE 6：AWS に接続しないデプロイの準備（2026-11-25、セッション 7）
+
+手順は `docs/deploy.md`、方針は `docs/plan.md` §7。
+
+**外部 API のフラグ（`EXTERNAL_APIS_ENABLED`）**：
+- 既定は無効。`true`（大文字・小文字と前後の空白は問わない）と一致したときだけ有効にする。`1`・`yes`・綴りの誤りも無効にした。「有効にし忘れる」失敗は 503 が出るだけで済むが、「無効にし忘れる」失敗は規約違反になりうる。失敗の重さが非対称なので、曖昧な値は全て安全側に倒した。
+- 判定は送信のたびに、リミッターより前で行う。無効なら待たず・送らず・送信回数にも数えない。環境変数の変更が新しい実行環境からすぐ効き、緊急停止の手段にもなる。
+- テストでは、各クライアントに `enabled` を**依存として渡す**（`fetch`・`clock` と同じ差し替え）。環境変数を書き換えるテスト専用の分岐を本番コードに入れないため（`.claude/rules/testing.md`）。既存のテストは `enabled=lambda: True` を明示し、既定（環境変数）の挙動は `test_deploy.py` で確かめる。conftest で本番用の環境変数を毎回消すので、開発者のシェルの設定でテストの結果が変わらない。
+- 無効のときは、専用のコード（`route_disabled` / `places_disabled`）と「この環境では…停止しています」を返す。障害（`*_unavailable`）と区別できる。フロントは未知の 503 のコードでも `detail` を表示する作りだったので、表示はコードの追加なしでも出たが、意図を明示するために対応表に加えた。
+- 経路検索は、無効でも GBFS は取得してから 503 にする（AWS 上で ODPT までの疎通を確かめられる。plan §7.8 の手順 9）。
+
+**CloudFront の共有シークレット（`app/security.py`）**：
+- 「設定されていれば検証する」だけだと、Lambda に設定し忘れたときに素通しになる。Lambda が自動で設定する `AWS_LAMBDA_FUNCTION_NAME` を見て、**Lambda 上では検証を必須**にし、未設定・32 文字未満なら全て 403 にした（fail closed）。ローカルでは従来どおり不要。
+- `hmac.compare_digest` で比較し、値はログにも応答にも出さない（原因が分かるよう、変数名だけ出す）。
+- 応答には全て `Cache-Control: no-store` を付ける（403・422・503 を含む）。CloudFront は `/api/*` を CachingDisabled にするが、座標・検索語を含む応答がどこかでキャッシュされない保険として、オリジン側でも明示した。
+- 最初は `@app.middleware("http")`（BaseHTTPMiddleware）で書いたが、reviewer の指摘で**純粋な ASGI のミドルウェア**に書き換えた。`http.response.start` の時点でヘッダーを付けるので、`call_next` の例外の再送出やストリーミングの挙動に左右されない。
+- それでも、**未処理の例外による 500 は、最も外側の `ServerErrorMiddleware` が返すので、どのミドルウェアも通らない**（Starlette の構造）。そこで `Exception` の例外ハンドラで、500 にも `no-store` と中身のない本文（`internal_error`）を付けた。詳細はログ（traceback）にだけ残る。
+- シークレットは前後の空白を除いてから長さを数える（空白だけの値をシークレットとして使わせない。reviewer の指摘）。
+- Mangum + HTTP API v2 のイベントでも、403・no-store が付くことをテストで確かめた。
+
+**Basic 認証（`infra/cloudfront/basic-auth.js`）**：
+- KeyValueStore には `Authorization` ヘッダーの値の SHA-256 だけを置く。平文の資格情報を AWS にも置かないため。ハッシュは総当たりに弱いので、長いランダムなパスワードを前提にする。
+- KeyValueStore を読めない・値の形式が不正なら 503。設定の不備で全員を通してしまうことを防ぐ。キーを消すことが、画面と API を数秒で止める最速の緊急停止にもなる（反映時間は未確認）。
+- CloudFront Functions に `crypto.timingSafeEqual` はない（公式資料に記載なし）ので、16 進の比較は途中で打ち切らない自前のループにした。
+- テストは Node 標準の `node:test` で書いた（`@types/node` などの依存を追加しないため）。`import cf from 'cloudfront'` の 1 行を取り除き、偽の KeyValueStore を渡して評価する。ランタイム上での最終確認は `test-function` で行う。
+
+**Lambda のパッケージ（`scripts/build_lambda.py`）**：実際に作ってみて分かったことは plan §7.4。要点：
+- pip の `--platform` は、指定したタグより古い manylinux の wheel を**自動では受け入れなかった**（pip 26.3）。セッション 6 で「タグの名前ではなく実際の wheel で確かめる」と決めていたので、この挙動に気づけた。
+- 間接依存が固定されていなかった。ローカルの venv と Lambda で別の版になりうる。venv の `pip freeze` を制約にして、「テストした版 = デプロイする版」にした。ロックファイルを Git で管理するかは、MVP の後に検討する。
+- `.so` のタグだけでなく、ELF のヘッダー（x86_64）と、要求する glibc の版（最大 2.14）をファイルから読んで確かめた。
+- zip の中の日時・権限・順序を固定し、`bin/*.exe` を RECORD からも消して、再現可能にした（2 回のビルドでバイト単位で一致）。`CodeSha256` と同じ形式のハッシュを出し、アップロードした zip がビルドしたものと同じことを照合できる。
+- reviewer の指摘で追加した検査：要求する glibc がランタイム（AL2023 は 2.34 と仮定）より新しければ失敗、Windows 専用の依存（colorama など）の混入、RECORD が取り除いた `bin/` を指していないこと、abi3 の wheel のタグ（cp39-abi3 なども可）。zip は作成元を Unix（`create_system=3`）、属性を通常のファイル `0o100644` に固定し、順序は POSIX 形式のパスで決める（どの OS で作っても同じ zip になるように）。
+- **pip の `--platform` は、環境マーカー（`sys_platform` など）を実行しているホストで評価する**（reviewer の指摘）。今の依存では影響がないが、Windows でビルドすると、Linux でだけ必要な依存が落ちる・Windows 専用の依存が入る、という事故がありうる。最終的な確認は Lambda 上での import。
+
+**ローカルでの確認**（AWS に接続しない）：フラグなしの uvicorn と `vite preview`（本番ビルド）で、経路検索・地点検索の停止表示を Chrome（Claude in Chrome）で確認した。FOSSGIS・Nominatim への送信は 0 回。サーバーのログに座標・検索語は出ていない。`frontend/dist` にシークレット関連の文字列はない。
+
+**aws-expert による手順書の確認（公式資料との照合）で直したこと**：
+- CloudFront Function の `require('crypto')` を、公式サンプルと同じ `import crypto from 'crypto'` にした（`import` と `require` を 1 ファイルで混ぜた公式の例はない）。最終確認は `test-function`。
+- CLI で作った HTTP API の Lambda 統合には、呼び出し権限が**自動では付かない**（コンソールだけ）。`add-permission` を必ず実行し、`get-policy` で確かめる。
+- スロットリング（レート 1・バースト 2）を先に設定すると、確認の curl が 429 になる → 確認の後に設定する。
+- Lambda は作成直後 `Pending` で、更新中は再更新できない → `aws lambda wait function-active-v2` / `function-updated-v2`。
+- KeyValueStore の API は SigV4A で署名し、一時認証情報では STS のグローバルエンドポイントのトークンが使えない → 事前に `describe-key-value-store` で確かめ、コンソールでの代替手順を書いた（最速の緊急停止に関わるため）。
+- Budgets は 1 日最大 3 回の更新で、課金を止めない。Cost Anomaly Detection は検出まで最大 24 時間。
+- AL2023 の glibc は 2.34（事実）。`build_lambda.py` の仮定と一致。
+
+**AI 駆動開発の知見**：
+- **コードの reviewer と、AWS の手順の aws-expert を分けて使った**。reviewer は実装の抜け道（500 に no-store が付かない、zip が OS で変わる）を、aws-expert は公式資料と手順の食い違い（権限が自動で付かない、429 で確認が崩れる）を見つけた。観点の違う独立したレビューは、互いの見落としを補う。
+- Python のテキストモードで書いたファイルが CRLF になった、ヒアドキュメント経由で `\x7f` が生のバイトになった、など、**生成の経路で起きる事故**が 2 件あった。`file` コマンドと改行の確認で気づいた。差分を作った後は、内容だけでなくファイルの形式も確かめる。
+- 「必要以上の機能追加をしない」指示に従い、テストモードは実装せず、判断の理由を plan に残した。

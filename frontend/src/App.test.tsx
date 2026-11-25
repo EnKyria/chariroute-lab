@@ -310,6 +310,17 @@ describe('地点の指定', () => {
     await user.click(picker('出発地').getByRole('button', { name: '検索' }))
     expect(await screen.findByText(/見つかりませんでした。別の駅名/)).toBeInTheDocument()
   })
+
+  it('地点検索：停止中（503 places_disabled）なら、その旨を表示し、候補を出さない', async () => {
+    mockApi(undefined, () => Promise.resolve(json({ code: 'places_disabled' }, 503)))
+    render(<App />)
+    const user = userEvent.setup()
+    await user.click(picker('出発地').getByRole('button', { name: '地点検索' }))
+    await user.type(screen.getByLabelText('出発地を検索（駅名・施設名）'), '大阪城')
+    await user.click(picker('出発地').getByRole('button', { name: '検索' }))
+    expect(await picker('出発地').findByRole('alert')).toHaveTextContent('地点検索（外部の地点検索サービスへの接続）を停止しています')
+    expect(picker('出発地').queryByRole('button', { name: /大阪城天守閣/ })).not.toBeInTheDocument()
+  })
 })
 
 describe('検索結果', () => {
@@ -399,6 +410,24 @@ describe('検索の失敗（ダミーの結果を出さない）', () => {
     expect(alert).toHaveTextContent(detail)
     expect(screen.queryByText(/推定所要時間 約/)).not.toBeInTheDocument()
     expect(screen.queryByText(/徒歩のみ/)).not.toBeInTheDocument()
+  })
+
+  it('503（route_disabled）：外部 API を停止中の環境では、その旨を表示し、結果を出さない', async () => {
+    await searchFor(() =>
+      Promise.resolve(
+        json({ detail: 'この環境では、道路の経路の検索（外部の経路サービスへの接続）を停止しています', code: 'route_disabled' }, 503),
+      ),
+    )
+    const alert = await screen.findByRole('alert')
+    expect(within(alert).getByRole('heading')).toHaveTextContent('道路の経路を取得できません')
+    expect(alert).toHaveTextContent('停止しています')
+    expect(screen.queryByText(/推定所要時間 約/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '検索結果' })).not.toBeInTheDocument()
+  })
+
+  it('503（route_disabled）で detail がなくても、停止中であることを表示する', async () => {
+    await searchFor(() => Promise.resolve(json({ code: 'route_disabled' }, 503)))
+    expect(await screen.findByRole('alert')).toHaveTextContent('停止しています')
   })
 
   it('503 で code がなければ、経路の取得失敗として扱う', async () => {

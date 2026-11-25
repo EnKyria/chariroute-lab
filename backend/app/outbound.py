@@ -34,6 +34,21 @@ DEFAULT_OSRM_BIKE_URL = "https://routing.openstreetmap.de/routed-bike"
 DEFAULT_NOMINATIM_URL = "https://nominatim.openstreetmap.org"
 
 
+EXTERNAL_APIS_ENV = "EXTERNAL_APIS_ENABLED"
+
+
+def external_apis_enabled() -> bool:
+    """FOSSGIS OSRM・Nominatim への送信を許可するか（plan §7.3）。
+
+    既定は無効。環境変数が厳密に "true" のときだけ有効にする
+    （大文字・小文字と前後の空白は問わない）。
+    未設定・空・"1"・"yes"・綴りの誤りなどは、すべて無効として扱う（安全側に倒す）。
+    送信のたびに読むので、テストや設定の変更がすぐに反映される。
+    ODPT の GBFS は対象外（本番でも取得する）。
+    """
+    return os.environ.get(EXTERNAL_APIS_ENV, "").strip().lower() == "true"
+
+
 class OutboundError(Exception):
     """外部サービスへの送信に失敗した。メッセージに URL・座標・検索語を入れない。"""
 

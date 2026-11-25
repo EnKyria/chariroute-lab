@@ -4,13 +4,13 @@
 会話履歴にしか残っていない重要な情報は、ここか `docs/plan.md` / `docs/engineering-notes.md` に書き移す。
 フェーズ番号の定義は `docs/plan.md` §5 を参照。
 
-最終更新：2026-11-25（セッション 6：PHASE 5 のローカル結合確認の残り項目と、PHASE 6 の計画。コミット前）
+最終更新：2026-11-25（セッション 7：PHASE 6 の、AWS に接続しないデプロイの準備。コミット前）
 
 ## 現在のフェーズ
 **PHASE 4：フロントエンド実装** — 完了（PR #4、squash コミット `da66ea4`。直線距離モデルのベースラインとして保存）。
 **PHASE 4.5：地点指定の拡張と道路に沿った経路** — 完了（PR #6、squash コミット `5a756fc`）。ユーザー受入テストで、現在の UI と機能を MVP として承認された。
-**PHASE 5：ローカル結合確認** — **残りの確認項目を実施済み（セッション 6、ブランチ `feature/phase5-local-check`、未コミット）**。正常系とユーザー受入テストは PHASE 4.5 で実施済み。結果は下の「PHASE 5 の確認結果」。
-**PHASE 6：AWS デプロイ** — 計画のみ（`docs/plan.md` §7）。AWS の操作・リソース作成・CLI の導入・認証情報の取得は**まだ承認されていない**
+**PHASE 5：ローカル結合確認** — 完了（PR #7、squash コミット `a22e7fe`）。結果は下の「PHASE 5 の確認結果」。
+**PHASE 6：AWS デプロイ** — **AWS に接続しないコードと設定の準備が完了（セッション 7、ブランチ `feature/aws-deployment`、未コミット）**。手順は `docs/deploy.md`。AWS の操作・リソース作成・CLI の導入・認証情報の取得は**まだ承認されていない**
 
 ## 現在のブランチと Git の状態
 - リモート：`origin` = https://github.com/EnKyria/chariroute-lab（**public**）
@@ -18,11 +18,12 @@
 - `main`：… → PR #4（PHASE 4）の squash コミット `da66ea4`。`feature/frontend` はリモートとローカルの両方から削除済み（中身の一致を確認済み）
 - `main`：… → PR #5（`feature/road-routing`。PHASE 4 の残作業と PHASE 4.5 の仕様）の squash コミット `32bd870`。`feature/road-routing` はマージ済みで、リモートとローカルの両方にない（2026-11-25 に `gh pr view 5` と `git ls-remote` で確認）
 - `main`：… → PR #6（`feature/phase45-implementation`、PHASE 4.5）の squash コミット `5a756fc`。作業ブランチはマージ後に削除済み
-- 作業ブランチ：`feature/phase5-local-check`（`5a756fc` から作成。セッション 6）。**未コミット**。コミット・push・PR はユーザーの承認待ち
+- `main`：… → PR #7（`feature/phase5-local-check`、PHASE 5）の squash コミット `a22e7fe`。作業ブランチはマージ後に削除済み。セッション 7 の開始時に `main` = `origin/main` = `a22e7fe` を確認した
+- 作業ブランチ：`feature/aws-deployment`（`a22e7fe` から作成。セッション 7）。**未コミット**。コミット・push・PR はユーザーの承認待ち
 - `main` は ruleset `protect-main`（ID 28061644）で保護している。**直接 push はできない**ので、変更は必ず `feature/<名前>` ブランチ → PR → CI（`check`）が緑 → squash マージ、の順で行う
 - マージ済みのブランチは、リモートとローカルの両方から削除する。squash マージ後は `git branch -d` が使えないため、`git diff --quiet main <branch>` で中身が同じことを確かめてから `-D` で削除する
 - コミットの作者：ローカル設定の `EnKyria <36327617+EnKyria@users.noreply.github.com>`
-- Git 管理の対象外：`package/`、`deployment.zip`（旧 Lambda 成果物、削除しない）、`backend/.venv`、`backend/.venv-py310`（旧 3.10 の venv の退避先）、各種キャッシュ、`.claude/.cache/`
+- Git 管理の対象外：`build/`（`scripts/build_lambda.py` の成果物）、`package/`、`deployment.zip`（旧 Lambda 成果物、削除しない）、`backend/.venv`、`backend/.venv-py310`（旧 3.10 の venv の退避先）、各種キャッシュ、`.claude/.cache/`
 
 ## ユーザーの意思決定
 ### 2026-11-25（セッション 1）
@@ -111,6 +112,12 @@
   - テスト用のデータを使うなら、明確なテストモードにする。通常の検索結果としてダミーの経路を返さない（§7.1）
 - PHASE 6 の、AWS に接続しないコードの準備（plan §7.8 の手順 1）は**承認済み。ただし新しいセッションで実施する**
 - **AWS の操作はまだ承認していない**
+
+### 2026-11-25（セッション 7）
+- PHASE 6 の、AWS に接続しないコードと設定の準備を承認：Lambda のパッケージの手順、Python 3.12 / Linux の依存の互換性の確認、フロントの本番ビルド、本番用の環境変数と設定、外部 API の無効化フラグ、CloudFront の共有シークレットの検証、ユーザー認証の準備、テスト、デプロイ・緊急停止・削除の手順
+- 安全性の指示：本番では外部 API を既定で無効、設定の欠落も拒否、テストモードも既定で無効（通常の結果としてダミーを出さない）、シークレットを Git・フロント・ログに入れない、オリジンへのアクセス制限とユーザー認証を分ける、**CloudFront Functions の Basic 認証を第一候補・HTTPS 必須**、一般公開前に認証とアクセス制限を有効にできるようにする、座標・検索語を含む API の応答を CloudFront でキャッシュしない
+- 今夜の目標：外部 API を無効にした状態で、AWS 上で画面と API を動かし、HTTPS・API の疎通・アクセス制限・緊急停止を確かめる。DynamoDB の分散リミッターと実 API の本番での有効化は対象外
+- **AWS CLI の導入、AWS へのログイン、認証情報の取得、リソースの参照・作成・変更・削除はまだ承認していない**。コミット・push・PR は既存の承認ルールに従う
 
 ### ユーザー受入テストの結果（2026-11-25、ユーザーがブラウザで実施）
 - **確認できた（ユーザーの報告）**：現在地の取得、地点検索、道路に沿った経路の描画が正常に動作する
@@ -208,7 +215,8 @@
   - ローカルでの結合確認（uvicorn + Vite の proxy。OSRM・Nominatim は到達できない URL にして、FOSSGIS には接続していない）：プリセット 200、同じ地点 400、エリア外 400、旧形式 422、OSRM の失敗 503（`route_unavailable`）、地点検索の失敗 503、GET の地点検索 405。サーバーのログに座標・検索語が出ないこと
 - [x] **PHASE 4.5 の完了**：ユーザー受入テストで MVP として承認 → コミット・push・PR・CI・squash マージ・ブランチの削除
 - [x] **PHASE 5**：ローカル結合確認（残りの項目。セッション 6、下の「PHASE 5 の確認結果」）
-- [ ] **PHASE 6**：AWS デプロイ（実施計画は `docs/plan.md` §7。未承認）
+- [x] **PHASE 6 のコードの準備**（セッション 7）：外部 API のフラグ（既定は無効）、共有シークレットの検証（Lambda 上では必須）、`Cache-Control: no-store`、Basic 認証の CloudFront Function、`scripts/build_lambda.py`、手順書 `docs/deploy.md`。詳細は engineering-notes §12
+- [ ] **PHASE 6**：AWS デプロイ（手順は `docs/deploy.md`。AWS の操作は未承認）
 - [ ] **PHASE 7**：総合評価・技術知見の整理
 
 ## 重要な設計判断（詳細は `docs/engineering-notes.md` §2）
@@ -268,9 +276,18 @@
 - **未検証**：`main` への直接 push と force push が実際に拒否されるか。ユーザーの指示により、検証目的の直接 push は行わない。dry-run もサーバー側のルールを評価しないため、根拠にしない。
 
 ## 今後の改善事項（MVP 後）
+- 間接依存のロックファイルを Git で管理する（今は `build_lambda.py` が venv の `pip freeze` を制約にしている）
+- 本番で `/docs`・`/openapi.json` を止めるか検討する（今は CloudFront の Basic 認証と共有シークレットの内側にある。reviewer の nit）
 - GitHub Actions を、メジャータグ（`actions/checkout@v5`、`actions/setup-python@v6`）ではなくコミット SHA に固定する（Dependabot での更新もあわせて検討する）
 
 ## 最新の品質チェック結果
+- 2026-11-25（セッション 7、`feature/aws-deployment`、reviewer・aws-expert の指摘の修正後）：`python scripts/check.py` → **ALL PASSED**
+  - ruff：OK。pytest：**618 件成功**（+73：`test_deploy.py`・`test_build_lambda.py`。警告 1 件：Mangum の DeprecationWarning）
+  - npm lint / typecheck：OK。vitest：**48 件成功**（+3：停止中の表示）。vite build：OK
+  - **node --test（infra）：16 件成功**（CloudFront Function の Basic 認証。check.py に追加）
+  - 既存のテストの削除・skip・期待値の変更はない（`fakes.py`・`test_places.py` は `enabled=lambda: True` を明示しただけ）
+  - `python scripts/build_lambda.py`：OK（zip 約 3.3 MB・展開後 約 10 MB、problems なし、2 回のビルドでバイト単位で一致）
+  - ローカルでの画面確認（フラグなしの uvicorn + `vite preview`、Chrome）：経路検索・地点検索とも「停止しています」を表示し、結果・候補は出ない。FOSSGIS・Nominatim への送信 0 回、ログに座標・検索語なし
 - 2026-11-25（セッション 6、`feature/phase5-local-check`）：`python scripts/check.py` → **ALL PASSED**
   - ruff：OK。pytest：**545 件成功**（警告 1 件：Mangum の DeprecationWarning）
   - npm lint / typecheck：OK。vitest：**45 件成功**（+5：通信エラー後の再検索、35 秒の打ち切り、地図の配色と描く順 3 件）。vite build：OK
@@ -299,10 +316,11 @@
 - GitHub Actions：PR #1 でジョブ `check` が pass（ruff OK、pytest 9 件、`check.py: ALL PASSED`）
 
 ## 次にやること
-1. **新しいセッションで、PHASE 6 の AWS に接続しないコードの準備**（承認済み。plan §7.8 の手順 1）：実 API の有効・無効のフラグ（既定は無効）、共有シークレットの検証、`scripts/build_lambda.py`（wheel のタグと `.so` の一覧の出力）。
-2. **実機での確認**（ユーザー）：上の「PHASE 5 の確認結果」の「ユーザーが実機で確かめる必要がある項目」。
-3. **PHASE 6：AWS デプロイ**（**AWS の操作はまだ承認されていない**）：実施計画は `docs/plan.md` §7。今夜は、実 API を無効にしたデプロイと疎通確認を優先する。ユーザー認証（推奨案：CloudFront Functions の Basic 認証）と分散リミッターは、その後にする。
+1. **セッション 7 の変更の確認とコミット・push・PR**（ユーザーの承認待ち）。
+2. **AWS デプロイ**（`docs/deploy.md`。AWS の操作はまだ承認されていない）：ユーザーが AWS CLI の導入・SSO + MFA の設定・秘密の値の作成（§1）→ 承認を得て §2 の読み取り専用の棚卸し → 結果の確認 → §3 以降を手順ごとに承認を得て実施。
+3. **実機での確認**（ユーザー）：上の「PHASE 5 の確認結果」の「ユーザーが実機で確かめる必要がある項目」。
+4. **PHASE 6 の補足**（**AWS の操作はまだ承認されていない**）：実施計画は `docs/plan.md` §7。今夜は、実 API を無効にしたデプロイと疎通確認を優先する。ユーザー認証（推奨案：CloudFront Functions の Basic 認証）と分散リミッターは、その後にする。
    - **本番では実 API（OSRM・Nominatim）を無効にしてデプロイする**。有効にする条件（分散リミッター、同時実行数 1 の設定の確認、緊急停止の訓練、ローカルとの同時利用の防止）は plan §7.3。予約済み同時実行数 1 だけでは保証とみなさない。
    - wheel のタグは、AWS の案内どおり `manylinux_2_28_x86_64` を指定し、実際に入った wheel で互換性を確かめる。Lambda のタイムアウトは 28 秒（HTTP API の統合タイムアウトは 30 秒で引き上げ不可）。
    - AWS CLI の導入と認証設定、棚卸し（`get-account-settings` で同時実行数の上限を確認）以降は、操作ごとにユーザーの承認を得る。
-4. **PHASE 7**：総合評価・技術知見の整理。
+5. **PHASE 7**：総合評価・技術知見の整理。

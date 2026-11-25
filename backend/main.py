@@ -18,6 +18,7 @@ from app.places import MAX_QUERY_LEN, MIN_QUERY_LEN, PlacesClient, PlacesError
 from app.presets import PRESETS, Preset, find_preset
 from app.road_routing import Leg, NoNearbyRoad, search_road_route
 from app.routing import Point, Station, haversine_m
+from app.security import NO_STORE, OriginAndCacheMiddleware
 
 logger = logging.getLogger("chariroute")
 logger.setLevel(logging.INFO)
@@ -25,11 +26,14 @@ logger.setLevel(logging.INFO)
 JST = timezone(timedelta(hours=9), "JST")
 # 1 回の検索で OSRM に使える時間の合計。当初は 20 秒（plan §6.6）だったが、自転車の Table が
 # 実測で約 9.7 秒かかったため 25 秒にした（engineering-notes §9.7）。
-# API Gateway HTTP API の統合タイムアウトの上限（30 秒）より短くする。Lambda は 30 秒
+# API Gateway HTTP API の統合タイムアウトの上限（30 秒）と、
+# Lambda のタイムアウト（28 秒。plan §7.2）より短くする
 SEARCH_DEADLINE_SECONDS = 25.0
 SAME_LOCATION_M = 10.0  # 出発地と目的地がこれより近ければ「同じ地点」とみなす
 
 app = FastAPI(title="chariroute-lab API")
+# CloudFront を経由しない呼び出しを 403 にし、全ての応答に Cache-Control: no-store を付ける
+app.add_middleware(OriginAndCacheMiddleware)
 
 
 # --- エラー ------------------------------------------------------------------------
@@ -55,11 +59,25 @@ def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
         "detail": errors, "code": "invalid_request"})
 
 
+@app.exception_handler(Exception)
+def _unhandled(_: Request, exc: Exception) -> JSONResponse:
+    """想定外の例外（500）。本文に内容を出さず、キャッシュさせない。
+
+    500 は最も外側の ServerErrorMiddleware が返すので、OriginAndCacheMiddleware を通らない。
+    例外の詳細（traceback）は ServerErrorMiddleware が再送出し、Lambda のログに残る。
+    """
+    return JSONResponse(status_code=500, headers={"Cache-Control": NO_STORE}, content={
+        "detail": "サーバーでエラーが発生しました", "code": "internal_error"})
+
+
 GBFS_UNAVAILABLE = "ポート情報を取得できませんでした。しばらくしてから再度お試しください"
 ROUTE_UNAVAILABLE = "道路の経路を取得できませんでした。しばらくしてから再度お試しください"
 ROUTE_BUSY = "経路サービスが混雑しています。しばらくしてから再度お試しください"
 PLACES_UNAVAILABLE = "地点を検索できませんでした。しばらくしてから再度お試しください"
 PLACES_BUSY = "地点検索サービスが混雑しています。しばらくしてから再度お試しください"
+# 外部 API（OSRM・Nominatim）を設定で無効にしているとき（本番の既定。plan §7.3）
+ROUTE_DISABLED = "この環境では、道路の経路の検索（外部の経路サービスへの接続）を停止しています"
+PLACES_DISABLED = "この環境では、地点検索（外部の地点検索サービスへの接続）を停止しています"
 
 
 # --- データの出典とライセンス -------------------------------------------------------
@@ -291,7 +309,10 @@ def search_routes(request: RouteRequest,
         raise ApiFailure(400, "no_road_nearby",
                          f"{which}の近くに道路が見つかりません。別の地点を指定してください") from e
     except OsrmError as e:
-        logger.warning("route search %s result=osrm_error busy=%s: %s", kinds, e.busy, e)
+        logger.warning("route search %s result=osrm_error busy=%s disabled=%s: %s", kinds, e.busy,
+                       e.disabled, e)
+        if e.disabled:
+            raise ApiFailure(503, "route_disabled", ROUTE_DISABLED) from e
         if e.busy:
             raise ApiFailure(503, "route_busy", ROUTE_BUSY) from e
         raise ApiFailure(503, "route_unavailable", ROUTE_UNAVAILABLE) from e
@@ -332,7 +353,9 @@ def search_places(request: PlacesRequest,
         found = places.search(q)
     except PlacesError as e:
         # 検索語はログに出さない（e のメッセージにも含まれない）
-        logger.warning("place search result=error busy=%s: %s", e.busy, e)
+        logger.warning("place search result=error busy=%s disabled=%s: %s", e.busy, e.disabled, e)
+        if e.disabled:
+            raise ApiFailure(503, "places_disabled", PLACES_DISABLED) from e
         if e.busy:
             raise ApiFailure(503, "places_busy", PLACES_BUSY) from e
         raise ApiFailure(503, "places_unavailable", PLACES_UNAVAILABLE) from e
