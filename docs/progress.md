@@ -4,16 +4,17 @@
 会話履歴にしか残っていない重要な情報は、ここか `docs/plan.md` / `docs/engineering-notes.md` に書き移す。
 フェーズ番号の定義は `docs/plan.md` §5 を参照。
 
-最終更新：2026-11-25（セッション 2、`feature/ci` の PR 作成時）
+最終更新：2026-11-25（セッション 2 の終了時）
 
 ## 現在のフェーズ
-**PHASE 2：GitHub・CI 構築** — 進行中。CI のワークフローを `feature/ci` で追加し、PR で CI を確認している段階。
-残り：CI が緑になる → マージ → `main` のブランチ保護 → 保護の動作確認（引き継ぎ用 docs の PR）
+**PHASE 2：GitHub・CI 構築** — 完了（引き継ぎ用 PR `feature/phase2-handoff` のマージをもって完了）。
+→ 次は **PHASE 3：バックエンド実装**
 
 ## 現在のブランチと Git の状態
 - リモート：`origin` = https://github.com/EnKyria/chariroute-lab（**public**）
-- `main`：初回コミット `dfffd2c`（PHASE 1）を push 済み
-- `feature/ci`：`.github/workflows/ci.yml` の追加と、docs の更新
+- `main`：`dfffd2c`（PHASE 1）→ `89848ed`（PR #1、CI の追加、squash マージ）→ 引き継ぎ用 PR
+- `main` は ruleset `protect-main`（ID 28061644）で保護している。**直接 push はできない**ので、変更は必ず `feature/<名前>` ブランチ → PR → CI（`check`）が緑 → squash マージ、の順で行う
+- マージ済みのブランチは、リモートとローカルの両方から削除する。squash マージ後は `git branch -d` が使えないため、`git diff --quiet main <branch>` で中身が同じことを確かめてから `-D` で削除する
 - コミットの作者：ローカル設定の `EnKyria <36327617+EnKyria@users.noreply.github.com>`
 - Git 管理の対象外：`package/`、`deployment.zip`（旧 Lambda 成果物、削除しない）、`backend/.venv`、`backend/.venv-py310`（旧 3.10 の venv の退避先）、各種キャッシュ、`.claude/.cache/`
 
@@ -36,6 +37,8 @@
   - force push を禁止する
   - ブランチの削除を禁止する
   - 他者のレビュー承認は**必須にしない**（個人開発のため）
+- マージは **squash** で行い、マージ済みのブランチは削除する
+- ブランチ保護の検証のために、`main` へ直接 push してはいけない
 
 ## 完了済みタスク
 ### PHASE 1（2026-11-25 完了）
@@ -45,12 +48,12 @@
 - [x] GBFS の取得可否・ライセンス・データ構造の確認（`docs/plan.md` §1）
 - [x] reviewer による最終レビューと指摘への対応 → 初回コミット `dfffd2c`
 
-### PHASE 2（進行中）
+### PHASE 2（2026-11-25 完了）
 - [x] GitHub の認証（`gh auth login`、アカウント `EnKyria`）
 - [x] public リポジトリの作成と `main` の push
-- [x] `feature/ci`：GitHub Actions のワークフロー（`.github/workflows/ci.yml`）
-- [ ] PR で CI が緑になることの確認 → マージ
-- [ ] `main` のブランチ保護の設定と、保護の動作確認
+- [x] `feature/ci`：GitHub Actions のワークフロー（`.github/workflows/ci.yml`）→ PR #1 の CI が pass（18 秒）→ squash マージ
+- [x] `main` のブランチ保護（ruleset `protect-main`）の設定と、API による設定内容の確認
+- [x] 引き継ぎ用 PR で、必須チェック `check` が機能することを確認（結果は「ブランチ保護の検証結果」を参照）
 
 ## 未完了タスク（以降のフェーズ）
 - [ ] **PHASE 3**：GBFS の取得・キャッシュ、大阪市内のポート抽出、失敗時に 503、K×K の経路計算、プリセット API
@@ -76,6 +79,17 @@
 - Stop Hook：セッション 2 で、状態ファイル `.claude/.cache/stop-hook-state.json` が `stop_hook.py` の修正後に更新されていたため、**動作していると推定**。`/hooks` での目視確認はまだ。サブエージェント（reviewer）は読み込まれ、動作を確認済み
 - Mangum 0.22 で DeprecationWarning が出る（動作には影響なし）
 
+## ブランチ保護の検証結果（2026-11-25）
+- **API で確認した事実**：`GET /repos/EnKyria/chariroute-lab/rules/branches/main` で、ruleset 28061644 の 4 つのルールが `main` に適用されている。
+  - deletion
+  - non_fast_forward
+  - pull_request（`required_approving_review_count: 0`）
+  - required_status_checks（`check`、integration_id 15368 = github-actions、`strict: false`）
+  - あわせて `enforcement: active`、`bypass_actors: []`、`current_user_can_bypass: never` を確認した。
+- **送っていないのに既定値で付いたパラメータ**：`require_extra_approval_for_unattributed_changes: true` と `allowed_merge_methods: [merge, squash, rebase]`。前者の意味は未調査。
+- **PR での確認**：引き継ぎ用 PR の結果を PR_RESULT_PLACEHOLDER に記録する。
+- **未検証**：`main` への直接 push と force push が実際に拒否されるか。ユーザーの指示により、検証目的の直接 push は行わない。dry-run もサーバー側のルールを評価しないため、根拠にしない。
+
 ## 今後の改善事項（MVP 後）
 - GitHub Actions を、メジャータグ（`actions/checkout@v5`、`actions/setup-python@v6`）ではなくコミット SHA に固定する（Dependabot での更新もあわせて検討する）
 
@@ -84,10 +98,18 @@
   - ruff：All checks passed
   - pytest：9 件成功（警告 1 件：Mangum の DeprecationWarning）
   - CI と同じ `CHECK_PYTHON` の経路でも成功。Python が見つからない場合は exit 2 になることも確認
-- GitHub Actions：PR で確認中
+- GitHub Actions：PR #1 でジョブ `check` が pass（ruff OK、pytest 9 件、`check.py: ALL PASSED`）
 
-## 次にやること
-1. PR の CI が緑になることを確認して、マージする（ユーザーの承認後）
-2. `main` のブランチ保護を設定する（上の方針。ユーザーの承認後）
-3. 引き継ぎ用の docs の PR で、保護が効いているか確認する（直接 push の拒否、CI が必須チェックになっていること）
-4. PHASE 2 完了 → このファイルを更新 → PHASE 3 へ
+## 次にやること（PHASE 3：バックエンド実装）
+1. このファイルを読み、`git switch main && git pull --ff-only` と `git log --oneline -5` で状態を確認する。`gh api user --jq .login` が `EnKyria` であることも確認する
+2. `/hooks` で Stop Hook が読み込まれていることを目視で確認する（未確認）
+3. 未解決の問題のうち、PHASE 3 の前提になる 3 点を調べる。調査は `researcher` に任せる
+   - 大阪市内のポートの抽出方法
+   - エリアをまたいだ返却への対応
+   - ODPT のアクセス頻度に関する規約
+4. `feature/gbfs-client` などのブランチを切る。`evaluator` に要求仕様を渡してテストケースを設計させてから、テスト先行で実装する
+   - GBFS の取得、キャッシュ、失敗時の 503
+   - 大阪市内のポートの抽出
+   - K×K の経路計算
+   - プリセット API
+5. 特性テストを置き換えるときは、その理由をコミットメッセージに書く（`.claude/rules/testing.md`）
