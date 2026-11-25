@@ -1,0 +1,14 @@
+# リポジトリ全体の Python lint 設定（backend/ と scripts/ に適用）。
+# パッケージ定義ではない。pytest の設定は backend/pyproject.toml にある。
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["backend", "scripts"]
+extend-exclude = [".venv*", "package"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# scripts/ は起動用 python が 3.10 でも動くよう、3.11+ 構文への書き換えを抑止する
+"scripts/*" = ["UP"]

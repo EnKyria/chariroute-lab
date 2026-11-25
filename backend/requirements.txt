@@ -1,0 +1,5 @@
+# Lambda ランタイム依存（Python 3.12 / x86_64）。
+# 既存 deployment.zip に同梱されている版に合わせて固定している。
+fastapi==0.163.1
+pydantic==2.14.3
+mangum==0.22.0

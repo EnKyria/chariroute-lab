@@ -1,0 +1,49 @@
+# --- 機密情報 ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.aws/
+credentials
+
+# --- Python ---
+.venv/
+.venv-*/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# --- Node / Frontend ---
+node_modules/
+dist/
+*.tsbuildinfo
+
+# --- Lambda ビルド成果物（ソースから再生成する） ---
+/package/
+/build/
+*.zip
+.aws-sam/
+
+# --- IaC（state や変数ファイルには機密が入りうる） ---
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+cdk.out/
+
+# --- Claude Code（個人設定・ローカル状態） ---
+.claude/settings.local.json
+.claude/.cache/
+CLAUDE.local.md
+
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
