@@ -14,11 +14,8 @@ import random
 import pytest
 
 from app.routing import (
-    BikeRoute,
     Point,
-    SearchResult,
     Station,
-    WalkRoute,
     haversine_m,
     search_route,
 )
@@ -78,7 +75,6 @@ def test_r1_nearest_rent_station_is_not_always_best():
                                                  abs=0.01)
     assert r.bike.total_minutes == pytest.approx(28.20, abs=0.01)
     assert expected_total(34.700, 34.698, 34.740, 34.740) == pytest.approx(29.90, abs=0.01)
-    assert r.recommended == "bike_share"
 
 
 def test_r2_nearest_return_station_is_not_always_best():
@@ -121,17 +117,16 @@ def test_r3_same_station_pair_is_excluded():
     [st("a", 34.70, ret=False), st("b", 34.74, ret=False)],  # 返却可能なポートがない
     [],
 ])
-def test_r4_no_candidate_returns_none_and_walk(stations):
+def test_r4_no_candidate_returns_none(stations):
+    # PHASE 4.5：徒歩のみの経路は廃止（plan §6.3）。
+    # 組がなければ bike が None になることだけを確かめる
     r = search_route(ORIGIN, DEST, stations)
     assert r.bike is None
-    assert r.recommended == "walk"
-    assert r.walk.total_minutes == pytest.approx(40 * WALK_MIN_PER_MDEG, abs=0.01)
 
 
 def test_b6_single_station_both_capable_cannot_form_pair():
     r = search_route(ORIGIN, DEST, [st("only", 34.72)])
     assert r.bike is None
-    assert r.recommended == "walk"
 
 
 # --- 利用可否の判定 ------------------------------------------------------------------
@@ -287,33 +282,16 @@ def test_b8_tie_is_broken_deterministically_by_station_id():
         assert r.bike is not None and r.bike.rent_station.station_id == "east"
 
 
-def _result(bike_total: float | None, walk_total: float) -> SearchResult:
-    bike = None
-    if bike_total is not None:
-        s = st("a", 34.7)
-        bike = BikeRoute(s, s, 0, 0, 0, 0, 1, 0, 1, 0, bike_total)
-    return SearchResult(bike, WalkRoute(1000, walk_total), 1, 1, 1)
+# B9（おすすめの判定）は、PHASE 4.5 でおすすめの機能を廃止したため削除した（plan §6.3）。
 
 
-@pytest.mark.parametrize(("bike_total", "walk_total", "expected"), [
-    (10.0, 10.1, "bike_share"),
-    (10.0, 10.0, "walk"),  # B9：同じ値なら walk
-    (10.1, 10.0, "walk"),
-    (None, 10.0, "walk"),
-])
-def test_b9_recommended_rule(bike_total, walk_total, expected):
-    assert _result(bike_total, walk_total).recommended == expected
-
-
-def test_b10_short_trip_recommends_walk_but_still_returns_bike():
-    """B10：手続きの 2 分があるので、2 ÷ (1.8069 − 0.5782) ≒ 1.63 mdeg（約 180m）未満の移動では
-    徒歩のほうが速い。1 mdeg なら徒歩 1.81 分、自転車 0.58 + 2 = 2.58 分。"""
+def test_b10_short_trip_still_returns_bike():
+    """B10：短い移動でも、シェアサイクルの経路を返す（徒歩との比較は PHASE 4.5 で廃止）。
+    1 mdeg なら自転車 0.58 + 手続き 2 = 2.58 分。"""
     o, d = Point(34.700, LON), Point(34.701, LON)
     r = search_route(o, d, [st("a", 34.700, ret=False), st("b", 34.701, rent=False)])
     assert r.bike is not None
     assert r.bike.total_minutes == pytest.approx(BIKE_MIN_PER_MDEG + HANDLING, abs=0.01)
-    assert r.walk.total_minutes == pytest.approx(WALK_MIN_PER_MDEG, abs=0.01)
-    assert r.recommended == "walk"
 
 
 def test_total_is_sum_of_legs():

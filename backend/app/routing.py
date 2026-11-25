@@ -1,5 +1,8 @@
 """経路計算（純粋関数）。HTTP や GBFS の取得には依存しない。
 
+PHASE 4.5 以降は「直線距離モデル」として、道路モデル（app/road_routing.py）の候補の絞り込みと、
+評価での比較に使う。徒歩のみの経路とおすすめの判定は、仕様の変更（plan §6.3）で削除した。
+
 合計所要時間 = 徒歩(出発地→貸出ポート) + 貸出手続き + 自転車(貸出→返却ポート) + 返却手続き
               + 徒歩(返却ポート→目的地)
 各区間の距離は「ハバーサイン式の直線距離 × 迂回係数」で概算する。
@@ -63,24 +66,11 @@ class BikeRoute:
 
 
 @dataclass(frozen=True)
-class WalkRoute:
-    distance_m: float
-    total_minutes: float
-
-
-@dataclass(frozen=True)
 class SearchResult:
     bike: BikeRoute | None  # 利用可能なポートの組がない場合は None
-    walk: WalkRoute
     rent_candidates: int
     return_candidates: int
     pairs_evaluated: int
-
-    @property
-    def recommended(self) -> str:
-        if self.bike is not None and self.bike.total_minutes < self.walk.total_minutes:
-            return "bike_share"
-        return "walk"
 
 
 def haversine_m(a: Point, b: Point) -> float:
@@ -131,8 +121,6 @@ def search_route(origin: Point, destination: Point, stations: Iterable[Station],
     （計測結果は docs/engineering-notes.md §7）。
     """
     stations = list(stations)
-    walk_m = haversine_m(origin, destination)
-    walk = WalkRoute(walk_m, travel_minutes(walk_m, params.walk_kmh, params.detour_factor))
     handling = params.rent_minutes + params.return_minutes
     fastest_kmh = max(params.walk_kmh, params.bike_kmh)
 
@@ -176,4 +164,4 @@ def search_route(origin: Point, destination: Point, stations: Iterable[Station],
                 best = BikeRoute(a, b, d_a, d_ab, d_b, t_a, params.rent_minutes, t_ab,
                                  params.return_minutes, t_b, total)
 
-    return SearchResult(best, walk, len(rent), len(ret), pairs)
+    return SearchResult(best, len(rent), len(ret), pairs)
