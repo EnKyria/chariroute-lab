@@ -87,7 +87,13 @@
   - required_status_checks（`check`、integration_id 15368 = github-actions、`strict: false`）
   - あわせて `enforcement: active`、`bypass_actors: []`、`current_user_can_bypass: never` を確認した。
 - **送っていないのに既定値で付いたパラメータ**：`require_extra_approval_for_unattributed_changes: true` と `allowed_merge_methods: [merge, squash, rebase]`。前者の意味は未調査。
-- **PR での確認**：引き継ぎ用 PR の結果を PR_RESULT_PLACEHOLDER に記録する。
+- **PR での確認（観測した事実）**：PR #2 の最初のコミット `233bb55` で確認した。`gh pr view` を 5〜6 秒おきに実行した結果（時刻は UTC）は次のとおり。
+  - 09:00:44：`mergeStateStatus=UNKNOWN`、チェックなし（PR 作成の直後）
+  - 09:00:52〜09:01:03：**`BLOCKED`**。`check` は `IN_PROGRESS`
+  - 09:01:09：**`CLEAN`**。`check` は `COMPLETED/SUCCESS`
+  - `gh pr checks --required` で、`check` が**必須チェック**として表示された（pass、15 秒）。check-run は github-actions（app_id 15368）が作成していた
+  - 「必須チェックが終わるまではマージできず、成功すると解除される」ことを確認した。ただし、BLOCKED の原因がほかのルールではなく必須チェックだけであることは、状態の変化から推定したもので、API で原因を直接確かめたわけではない
+  - この記録を追記したコミットの CI は、PR #2 の上で確認する（docs への再追記はしない）
 - **未検証**：`main` への直接 push と force push が実際に拒否されるか。ユーザーの指示により、検証目的の直接 push は行わない。dry-run もサーバー側のルールを評価しないため、根拠にしない。
 
 ## 今後の改善事項（MVP 後）
