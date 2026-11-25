@@ -23,17 +23,51 @@
 | `aws-expert` | AWS の構成やデプロイ方式を決める前、棚卸し結果の評価 | 決定済みの手順を実行するとき（実行はメインがユーザーの了承を得て行う） |
 
 ## 変えてはいけない要件
+- **サービスの目的**：大阪市内でドコモ・バイクシェアを使う前提で、効率的な**貸出ポートと返却ポートの組み合わせ**を探す。Google マップなどの既存のサービスとの差別化を重視し、シェアサイクル固有の課題に集中する（2026-11-25 決定）。
 - 対象地域は**大阪市**、対象事業者は**ドコモ・バイクシェアのみ**。他事業者向けの抽象化はしない。
 - ポート情報と貸出・返却状況は **GBFS**（ODPT 公開フィード `docomo-cycle`、CC BY 4.0）から取得する。
-- 入力はプリセット地点からの選択。経路は直線距離と移動速度にもとづく概算。
+- **地点の指定**：現在地（Geolocation）、地点検索（駅名・公開施設名、Nominatim）、プリセット、地図のタップ。出発地と目的地は自由に設定でき、入れ替えられる。
+  - PHASE 4.5 で実装する。現在の実装はプリセットだけ。
+- **経路**：徒歩（出発地 → 貸出）・自転車（貸出 → 返却）・徒歩（返却 → 目的地）の 3 区間。各区間の道路に沿った経路、距離、推定所要時間を表示する。
+  - 道路の経路は FOSSGIS の OSRM で取得する（`routed-foot` / `routed-bike`。Table で候補を評価し、Route で形状を取得）。
+  - 所要時間は、OSRM の**道路距離 ÷ ChariRoute の速度**（徒歩 4.8 km/h・自転車 15 km/h）+ 貸出・返却の手続き時間で求める。**推定値**であることを明示する。
+  - 直線距離で候補を絞り込むので、全てのポートの組での最適解は保証しない。このことを画面とドキュメントに明示する。
+  - 直線距離モデル（`backend/app/routing.py` の分枝限定法）は、候補の絞り込みと比較評価のために残し、道路モデルとは責務を分ける。
+  - 詳細は `docs/plan.md` §6。
+- **徒歩のみの経路、徒歩との比較、おすすめの移動手段、時間の短縮効果は扱わない**（Google マップで確認できるため。2026-11-25 決定。PHASE 4.5 で既存の実装から取り除く）。利用できるシェアサイクルの経路がないときは、そのことを明示する（徒歩への切り替えはしない）。
 - 最寄りポートだけでなく、**複数の貸出ポートと返却ポートの組み合わせ**を評価し、合計所要時間（徒歩 + 自転車 + 徒歩）が最小のものを選ぶ。
 - 実際に利用可能なポートだけを使う（貸出：`is_renting` かつ空き自転車 > 0、返却：`is_returning` かつ空きドック > 0）。
 - **GBFS の取得に失敗したときは、ダミーデータを実データとして返さない**（503 で返す）。
+- **OSRM が失敗したときは 503 を返す。** 直線距離モデルへの自動フォールバックはせず、ダミーの経路も出さない。道路の経路を取得できなかったことを画面に明示する。Nominatim が失敗したときも、ダミーの候補を出さない。
+- **外部の公開サービス（FOSSGIS OSRM・Nominatim）の利用条件を守る**（開発者が規約を確認して承認済み。対応表は `docs/engineering-notes.md` §9.5）：
+  - 個人利用・非商用の、低頻度の利用に限る。一般公開はしない。大量のアクセス、スクレイピング、負荷試験はしない。
+  - 各サービスへのリクエストは、**アプリ全体で 1 秒に 1 回以下**にする。
+    - OSRM の徒歩と自転車は、共通のリミッターで制御する。
+    - FOSSGIS への接続は同時に 1 つまでにする。
+    - **1.1 秒以上の間隔で直列に送る。自動リトライはしない。**
+  - アプリを識別できる User-Agent を付ける。技術的に可能なら、適切な Referer も付ける。
+  - ライセンスとクレジットの表記、OSM の地図修正リンク（fixthemap）を表示する。
+  - 外部サービスの URL は、設定（環境変数）で切り替えられるようにする。外部サービスには、原則としてバックエンドからだけアクセスする。
+  - Nominatim の制約：
+    - オートコンプリート、定期的な検索、網羅的な検索はしない。
+    - 呼び出すのは、ユーザーが明示的に検索したときだけ。
+    - 同じ検索はキャッシュで返す。キャッシュに入れるのは、公開施設の検索結果だけ。
+  - **FOSSGIS の規約にある「サイト運営者の連絡先メールアドレスを容易に確認できるようにする」要件への対応が決まるまでは、FOSSGIS の実 API を使わない**（スモークテストを含む）。個人のメールアドレスを勝手に公開しない。
+  - 本番環境（AWS）で、複数の実行環境や環境の入れ替えを含めてレート制限を保証できない場合は、**本番での実 API の利用を始めない**。
+- **位置情報と検索語の扱い**：
+  - GPS の座標、個人情報、機密情報を、自アプリのログ、キャッシュ、永続ストレージに保存しない。エラーログも含む。
+  - 現在地は、ユーザーが操作したときだけ取得する。
+  - 座標を外部サービスに送ること、FOSSGIS のサーバーログに経路検索のリクエストが記録されることを、事前に画面で明示する。
+  - Nominatim に個人情報や機密情報を送らない。検索の対象は駅名・公開施設名とする。
+- **openrouteservice は使わない**。新規の API キー、有料の契約、クレジットカードの登録が要らない構成を維持する。
+- 秘密の値を `VITE_` の環境変数に入れない（ビルド成果物に含まれ、ブラウザから見える）。
 
 ## アーキテクチャ（目標）
 ```
 Browser ─▶ CloudFront ─▶ S3（React / Vite のビルド成果物）
    └────▶ API Gateway HTTP API ─(Lambda プロキシ統合, payload 2.0)─▶ Lambda (Python 3.12, Mangum → FastAPI) ─▶ ODPT GBFS
+                                                                       ├▶ FOSSGIS OSRM（routed-foot / routed-bike の Table・Route、PHASE 4.5）
+                                                                       ├▶ Nominatim（地点検索、規約の承認後）
                                                                        └▶ CloudWatch Logs / Metrics
 ```
 - IAM は最小権限とする。Lambda の実行ロールは CloudWatch Logs への書き込みのみ。
@@ -43,6 +77,7 @@ Browser ─▶ CloudFront ─▶ S3（React / Vite のビルド成果物）
 - `backend/`：FastAPI アプリ（`main.py`）、テスト（`tests/`）、依存定義（`requirements*.txt`）
 - `frontend/`：React + TypeScript + Vite + Leaflet。`src/api/`（型と API クライアント）、`src/App.tsx`（画面）、`src/RouteMap.tsx`（地図）
 - `scripts/check.py`：品質ゲート。`scripts/stop_hook.py`：Claude Code の Stop Hook
+- `README.md`：再現可能なセットアップと起動の手順（uvicorn + Vite）
 - `package/` と `deployment.zip`：旧手順で作った Lambda 成果物。Git 管理の対象外で、削除しない
 
 ## セットアップとコマンド（Windows / Git Bash）
@@ -50,6 +85,8 @@ Browser ─▶ CloudFront ─▶ S3（React / Vite のビルド成果物）
 py -3.12 -m venv backend/.venv            # Python 3.12 必須（Lambda ランタイムと合わせる）
 backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt
 (cd frontend && npm ci)                    # Node.js 22 系（22.22.2 以上）
+(cd backend && .venv/Scripts/python.exe -m uvicorn main:app --port 8000)   # API（開発用）
+(cd frontend && npm run dev)               # 画面 http://127.0.0.1:5173（/api は 8000 に proxy）
 python scripts/check.py                    # lint / typecheck / test / build の全件（push 前に必ず実行）
 backend/.venv/Scripts/python.exe -m pytest backend/tests -k <name>   # 個別のテスト
 ```

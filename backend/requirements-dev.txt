@@ -4,3 +4,5 @@ pytest==9.2.0
 # Starlette 1.x の TestClient は httpx2 を推奨（httpx は非推奨警告が出る）
 httpx2==2.16.2
 ruff==0.17.6
+# ローカル開発用の ASGI サーバー（Lambda では Mangum を使うので不要）。[standard] の追加機能は使わない
+uvicorn==0.54.0

@@ -19,6 +19,7 @@
 | React 19 + TypeScript 6.0 + Vite 8（PHASE 4） | 1 画面の SPA を静的ファイルとしてビルドでき、S3 + CloudFront で配信できる。TypeScript は 7.0 が最新だが、typescript-eslint 8.74 が `<6.1` までしか対応しないため 6.0 にした |
 | Leaflet 1.9 + React Leaflet 5 + OpenStreetMap（PHASE 4） | API キーが不要で、地図の表示に必要な機能（タイル、円マーカー、折れ線、ツールチップ）が揃う。マーカーは画像を使う `Marker` ではなく `CircleMarker` にして、バンドラでのアイコン画像の問題を避けた |
 | Vitest 5 + Testing Library + jsdom（PHASE 4） | Vite と設定を共有できる。ユーザーから見える振る舞い（ロール・ラベル・文言）でテストする |
+| uvicorn 0.54（開発用、PHASE 4） | ローカルで FastAPI を動かし、Vite の proxy から API を呼ぶため。Lambda には含めない（`requirements-dev.txt`）。追加機能（`[standard]`）は不要なので入れない |
 | ESLint 10 + typescript-eslint + react-hooks / react-refresh（PHASE 4） | Vite の公式テンプレートと同じ構成。`no-explicit-any` を error にした |
 
 ## 2. 設計判断とトレードオフ
@@ -73,7 +74,11 @@
 - **2026-11-25 未選択と同じ地点は、API を呼ぶ前に画面で入力エラーにする**（PHASE 4）：サーバーも 400 を返すが、GBFS の取得を伴うリクエストを無駄に送らないため。
 - **2026-11-25 API は同一オリジンの相対パス（`/api/...`）で呼ぶ**（PHASE 4）：本番は CloudFront で `/api/*` を API Gateway に振り分ける想定で、CORS が不要になる。ローカルは Vite の `server.proxy` で `127.0.0.1:8000` に転送する。別オリジンにする場合だけ `VITE_API_BASE_URL` を設定する。
 - **2026-11-25 地図の線は破線の直線にし、凡例と注意書きで「概算」を明記した**（PHASE 4）：所要時間は直線距離 × 迂回係数なので、実線で道路のように見せると誤解を招く。大阪エリア判定の仮定があるため、利用前に公式アプリで確認するよう画面に書いた。
-- **2026-11-25 Node.js を 22.11.0 から 22.23.5 に更新した**（PHASE 4、ユーザーの判断）：Vite 8・Vitest 5・ESLint 10 は Node 22.12 以上、jsdom 31 は 22.22.2 以上が必要だった。古い系統（Vite 6 など）に固定する案もあったが、メジャーは変えずに最新のライブラリを使う方を選んだ。`package.json` の `engines` と `.nvmrc`（CI の setup-node が読む）で 22 系を指定した。
+- **2026-11-25 Node.js を 22.11.0 から 22.23.5 に更新した**（PHASE 4）：
+  - **理由**：最新版のライブラリが、22.11.0 では動かなかった。Vite 8・Vitest 5・ESLint 10 は Node 22.12 以上、jsdom 31 は 22.22.2 以上が必要。
+  - **検討した案**：(1) Node 22 系の最新に更新する、(2) Node は据え置いて、古い系統（Vite 6.4 / Vitest 3.2 / ESLint 9.39 / jsdom 26）に固定する、(3) Node 24 以降に上げる。
+  - **承認**：ユーザーに確認し、(1) の「メジャーは変えずに最新のライブラリを使う」が選ばれた。実行者も確認し、「Claude が winget で実行」が選ばれた。`winget upgrade --id OpenJS.NodeJS.22 --exact` を実行し、インストーラーの管理者権限の確認（UAC）はユーザーが承認した。
+  - **反映**：`package.json` の `engines`（`>=22.22.2 <23`）と `.nvmrc`（`22`。CI の setup-node が読む）で 22 系を指定した。CI でも Node 22.23.5 で動くことを確認した（PR #4）。
 - **2026-11-25 品質ゲートに frontend の `build` を加えた**（PHASE 4）：型チェックとテストが通ってもビルドで落ちる問題（Vite の設定、アセットの解決）を、CI で検出するため。依存のインストール（`npm ci`）は環境構築として CI のワークフロー側に書き、check.py は `node_modules` がなければ環境不備（exit 2）にする。
 
 ## 3. AI 駆動開発で得られた知見
@@ -167,7 +172,7 @@
 - **2026-11-25 Git Bash のコンソールで、Python の日本語の出力が文字化けした**（PHASE 3）：出力をファイルに書き出して読むか、`PYTHONIOENCODING=utf-8` を指定する。根本対策（コンソールのコードページの変更）は、環境整備に当たるため見送った。
 - **2026-11-25 Git Credential Manager の資格情報の保存エラー**：未解決。今回は記録だけにして修正しない（ユーザーの指示）。
 - **2026-11-25 小文字のドライブ文字（`d:\`）のカレントディレクトリから `npm test` を実行すると、Vitest が「failed to find the runner」で全件失敗した**（PHASE 4）：Windows でパスの大文字・小文字が違うと、同じ vitest が別のモジュールとして 2 回読み込まれるためと考えられる（推定）。`D:\` から実行すると成功する。`scripts/check.py` は `Path.resolve()` で `D:\` に正規化されたパスを cwd にするので、品質ゲート・Stop Hook・CI（Linux）では起きない。手で実行するときは `D:` から実行する。
-- **2026-11-25 ローカルに ASGI サーバー（uvicorn）がない**（PHASE 4）：依存を増やさずに画面と API の接続を確認するため、標準ライブラリの `http.server` で受けたリクエストを HTTP API v2 のイベントに変換し、`main.handler`（Mangum）に渡す使い捨てのブリッジで確認した（リポジトリには入れていない）。`ThreadingHTTPServer` だと、Mangum の `asyncio.get_event_loop()` がワーカースレッドで失敗したので、シングルスレッドにした。uvicorn の導入は PHASE 5 で判断する。
+- **2026-11-25 ローカルに ASGI サーバー（uvicorn）がない**（PHASE 4）：依存を増やさずに画面と API の接続を確認するため、標準ライブラリの `http.server` で受けたリクエストを HTTP API v2 のイベントに変換し、`main.handler`（Mangum）に渡す使い捨てのブリッジで確認した（リポジトリには入れていない）。`ThreadingHTTPServer` だと、Mangum の `asyncio.get_event_loop()` がワーカースレッドで失敗したので、シングルスレッドにした。→ PHASE 4 の残作業として、ユーザーの承認を得て uvicorn 0.54.0 を `requirements-dev.txt` に追加した（`[standard]` の追加機能は使わない）。
 
 ## 6. 技術面接で説明できる重要事項
 
@@ -304,3 +309,108 @@ A = B の組は除外し、全ての (A, B) の中で合計が最小の組を採
 - `src/test/setup.ts` で、各テストの前に `fetch` を「呼ばれたら失敗する」スタブにする。テストは必要な応答を明示的に差し替える。
 - Leaflet は jsdom で描画できないため、`App.test.tsx` では `RouteMap` を、受け取った結果を表示するだけの代用品に差し替える。点と線の組み立ては `mapPoints.test.ts` で純粋関数として確かめる。
 - フィクスチャ（`src/test/fixtures.ts`）は `RouteResponse` 型の注釈を付けて、型と構造のずれをコンパイル時に検出する。
+
+## 9. 外部の経路・地点検索サービスの調査（PHASE 4.5、2026-11-25）
+
+### 9.1 openrouteservice（ORS）：調査したが不採用（2026-11-25、ユーザーの判断）
+- **不採用の理由**：新規のアカウント登録、API キーの発行と管理、外部 API の課金リスクを避けることを優先した。以前 Muse で作った同様のアプリでは、キーが不要な FOSSGIS OSRM と Nominatim の構成で動いていた。
+- **調査結果の要点**（判断の記録として残す）：
+  - ホストは `api.openrouteservice.org` から `api.heigit.org` に移行中。旧ホストは 2026-08-27 からクォータが 10% に減った（公式フォーラム）。
+  - Standard プラン（0 €）の 1 日あたりの上限は Directions 2000 / Matrix 500 / Geocoding 3000（第三者経由で取得した値）。
+  - 上限を超えると、1 日の上限なら 403、1 分の上限なら 429 が返る。キーはブラウザで使ってはいけない（公式 FAQ）。
+  - ToS とプライバシーポリシーは JS で描画するページで、自動では取得できなかった。
+- **AWS でのキーの保管方法**：
+  - Lambda の環境変数
+  - SSM Parameter Store の SecureString（Standard）：無料
+  - Secrets Manager：$0.40/月
+  - OSRM と Nominatim はキーが不要なので、この比較は不要になった。
+
+### 9.2 FOSSGIS OSRM（採用。routing.openstreetmap.de）
+- **確認済み**（https://routing.openstreetmap.de/about.html）：
+  - 利用条件：「One request per second max」。スクレイピングと heavy use は禁止。有効な User-Agent（該当する場合は正しい Referer）が必要。
+  - プロファイル：car / bike / foot。対象は全世界で、データはおよそ 2 日ごとに更新される。地図修正リンクの表示が求められる。
+  - **経路の要求はサーバーのログファイルに保存される**。保存期間の記載はない。運営は FOSSGIS e.V.（ドイツ）。
+- **確認済み**（OSRM wiki の Demo server、https://github.com/Project-OSRM/osrm-backend/wiki/Demo-server）：
+  - 用途は「reasonable, non-commercial」、1 秒 1 リクエストまで、稼働・遅延・更新の保証なし。
+  - bike / foot のプロファイルは、FOSSGIS 独自のもの（cbf-routing-profiles）。
+- **確認済み**（API 仕様、https://github.com/Project-OSRM/osrm-backend/blob/master/docs/http.md）：
+  - Route：`overview=full|simplified|false`、`geometries=geojson`。応答の `routes[0].distance`（m）、`duration`（秒）、`geometry`、`legs[]`。
+  - Table：`sources` / `destinations` は地点のインデックス。`annotations=duration,distance`。到達できない組は `null`。
+  - エラーは HTTP 400 で、`code` に `NoRoute` / `NoTable` / `TooBig` / `InvalidQuery` などが入る。
+  - プロファイルはサーバー側で固定される。そのため、徒歩と自転車は別のホスト（`routed-foot` / `routed-bike`）に送り、区間ごとに別のリクエストにする必要がある。
+- **実際に呼んで確認した**（researcher が大阪で 1 回ずつ GET。UA は WebFetch のもの）：
+  - Table（routed-bike、中之島 → 梅田ほか）：`code: Ok`、durations `[[724, 661.4]]`、distances `[[1711.2, 1953.9]]`。
+  - Route（routed-foot）：`code: Ok`、1340 m・1073 秒（約 4.5 km/h）。GeoJSON の LineString が返る。
+  - 同じ区間の自転車は、1711 m・724 秒（約 8.5 km/h 相当）。電動アシストのシェアサイクルより遅い。→ 所要時間の求め方は plan §6.3 で判断する。
+- **未確認**：
+  - FOSSGIS の利用規約の本文（https://www.fossgis.de/arbeitsgruppen/osm-server/nutzungsbedingungen/）。bot 対策（Anubis）で自動取得できなかった。→ **2026-11-25 に開発者本人がブラウザで確認した**（§9.5）。
+  - 公開サーバーの Table の最大サイズ（OSRM の既定は 100 地点。コミュニティの情報のみ）。PHASE 4.5 の最大は 24 点で、十分に小さい。
+
+### 9.3 Nominatim（地点検索。開発者の規約確認と承認の後に実装）
+- **確認済み**（https://operations.osmfoundation.org/policies/nominatim/）：
+  - 1 秒に 1 リクエストまで、heavy use は禁止、**オートコンプリートは禁止**。
+  - アプリを識別できる User-Agent（または有効な Referer）が必要。HTTP ライブラリの既定の UA は不可。
+  - 同じクエリを繰り返すクライアントは遮断されうる。帰属表示が必要。
+- **検索 API の仕様**（https://nominatim.org/release-docs/latest/api/Search/）：
+  - `limit`：既定 10、最大 40
+  - `countrycodes=jp`
+  - `viewbox` + `bounded=1`：範囲を厳密に絞る
+  - `accept-language=ja`
+- **プライバシー**（https://osmfoundation.org/wiki/Privacy_Policy）：API のログの保存期間の記載はない。
+- **精度**：日本の住所は、番地まで引けない可能性が高い（公式の定量的な情報はない）。
+
+### 9.4 1 秒 1 リクエストを守る設計（推論を含む）
+- **確認済み**（AWS 公式）：
+  - Lambda の予約済み同時実行数は追加料金なしで設定できる。超えた呼び出しは 429（`TooManyRequestsException`）になる。
+  - HTTP API のスロットリングは token bucket 方式で、**best-effort**（上限は保証されない）。
+- **推論**：同時実行数を 1 にしても、同時に動く数が 1 になるだけで、リクエストの間隔は保証されない。そこで、プロセス内のリミッター（前回の送信から 1.1 秒空ける）と組み合わせる。
+- **残るリスク**：実行環境が入れ替わった直後は、前回の送信時刻が分からない。初回の送信の前にも待つことで緩和する。同時実行数が 1 なら、この待機で間隔が保証されると考えられる（§9.6 の推論）。
+- **採用しなかった案**：DynamoDB などによる分散リミッター。MVP では過剰と判断した。
+
+### 9.5 利用規約への対応（2026-11-25、開発者本人が確認し、採用を承認）
+**確認した規約**（確認日 2026-11-25、確認者は開発者本人）：
+- FOSSGIS の利用規約：https://www.fossgis.de/arbeitsgruppen/osm-server/nutzungsbedingungen/
+- FOSSGIS OSRM：https://routing.openstreetmap.de/about.html
+- Nominatim：https://operations.osmfoundation.org/policies/nominatim/
+
+**採用の前提**：個人利用・非商用・低頻度。この前提で、FOSSGIS OSRM と Nominatim の採用が承認された。
+
+| 条件 | 対応方法（PHASE 4.5 で実装、plan §6.7〜6.9） |
+|---|---|
+| 各サービスへのリクエストは、アプリ全体で 1 秒に 1 回以下 | サービスごとに、プロセス全体で共有するリミッター。本番では Lambda の予約済み同時実行数を 1 にする（PHASE 6） |
+| OSRM の徒歩と自転車は、共通のリミッターで制御する | `routed-foot` と `routed-bike` で、1 つのリミッターを共有する |
+| FOSSGIS へのスクリプトの接続は 1 つまで | ロックを送信から受信まで保持する（同時の接続は 1 つ）。スモークテストと開発サーバーを同時に動かさない |
+| 1.1 秒以上の間隔で、直列に送る | `time.monotonic` で前回の送信から 1.1 秒待つ。プロセスの起動後の最初の送信の前にも待つ |
+| 自動リトライで過剰にアクセスしない | 自動リトライは実装しない。失敗したら 503 |
+| アプリを識別できる User-Agent | `ChariRoute/0.1 (+https://github.com/EnKyria/chariroute-lab)`（設定で変更できる。個人のメールアドレスは入れない） |
+| 技術的に可能なら、適切な Referer | `OUTBOUND_REFERER` が設定されているときだけ付ける（本番の URL が決まったら設定する） |
+| ライセンスとクレジットの表記 | OSM（ODbL）、OSRM / FOSSGIS、Nominatim、GBFS（CC BY 4.0）を画面に表示する |
+| OSM の地図修正リンク | https://www.openstreetmap.org/fixthemap へのリンクを表示する |
+| 大量のアクセス、スクレイピング、負荷試験をしない | 実 API の確認は最小限のスモークテスト（Table 2 回・Route 3 回）だけ。自動テストはフィクスチャとスタブを使う |
+| URL を設定で切り替えられる | `OSRM_FOOT_URL` / `OSRM_BIKE_URL` / `NOMINATIM_URL`（https のみ） |
+| Nominatim：オートコンプリート・定期的な検索・網羅的な検索をしない | 検索ボタンを押したときだけ、1 回呼ぶ |
+| Nominatim：同じ検索を減らす | プロセス内のキャッシュ（24 時間・200 件）。入れるのは公開施設の結果だけ |
+| **サイト運営者の連絡先メールアドレスを、容易に確認できるようにする**（FOSSGIS の正式な規約） | **未解決**。個人のメインのメールアドレスは勝手に公開しない。対応方法（公開用のアドレスを用意する／運営者に問い合わせる）が決まるまで、FOSSGIS の実 API を使わない（plan §6.10） |
+
+**利用上の注意**：
+- 外部サービスには**稼働の保証（SLA）がない**。規約の変更や、利用の停止・遮断がありうる。そうなったら 503 を返し、ダミーの経路は出さない。
+- URL を設定で切り替えられるので、自前で立てた OSRM などにも移行できる。
+- 一般公開や商用の利用に変える場合は、規約の範囲を超えるので、自前で立てるか、別のサービスにする必要がある。
+
+### 9.6 PHASE 4.5 の設計判断（2026-11-25、ユーザーの最終決定）
+- **徒歩のみの経路・比較・おすすめを廃止した**：Google マップで確認できる機能と重なるため。シェアサイクル固有の課題（ポートの組み合わせ、空き台数・返却枠、乗り換えの徒歩）に集中して、既存のサービスとの違いを出す。
+- **OSRM の障害時は 503（B 案）**：直線距離の概算への自動フォールバックは、「道路の経路」と誤解されるおそれがある。正しさを優先して、取得できなかったことを明示する。
+- **所要時間 = 道路距離 ÷ 独自の速度**（第一案、実環境での確認待ち）：
+  - FOSSGIS の自転車プロファイルの所要時間は、電動アシストのシェアサイクルの実態より遅い（実測で約 8.5 km/h 相当）。
+  - 速度をアプリ側で決めると、直線距離モデルと前提がそろい、パラメータとして説明できる。
+  - 候補の選択（Table）と画面の表示（Route）で、同じ式を使う。
+- **候補は直線距離で各 10 件 + 直線距離モデルの最適な組**：
+  - Table の大きさ（最大 24 点）とリクエスト数（1 回の検索で 5 回）を抑えつつ、橋や川による遠回りを道路距離で評価できる。
+  - 最適解は候補の中でだけ保証される（全体の最適解は保証しない）。
+- **地点検索は POST で受ける**：検索語を、自アプリの URL や API Gateway・CloudFront のアクセスログに残さないため。ただし、Nominatim 側は GET なので、Nominatim のログには残りうる。このことを画面に明示する。
+- **1 秒 1 リクエストの保証の考え方**（推論）：
+  - Lambda の予約済み同時実行数が 1 なら、呼び出しは時間的に重ならない。
+  - プロセス内のリミッターで 1.1 秒の間隔を空け、新しい実行環境では最初の送信の前に 1.1 秒待つ。
+  - こうすると、前の実行環境の最後の送信（前の呼び出しが終わる前）から、新しい送信までに 1.1 秒以上が空く。
+  - ローカルでは、uvicorn の 1 プロセスに限る。
+  - 本番でこの前提を確かめられない場合は、本番での実 API の利用を始めない。

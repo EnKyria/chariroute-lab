@@ -4,16 +4,17 @@
 会話履歴にしか残っていない重要な情報は、ここか `docs/plan.md` / `docs/engineering-notes.md` に書き移す。
 フェーズ番号の定義は `docs/plan.md` §5 を参照。
 
-最終更新：2026-11-25（セッション 4：PHASE 4 完了、PHASE 4.5 の計画中）
+最終更新：2026-11-25（セッション 4 の終了時：PHASE 4 完了、PHASE 4.5 の仕様を確定）
 
 ## 現在のフェーズ
-**PHASE 4：フロントエンド実装** — 完了（PR `feature/frontend` の squash マージをもって完了。直線距離モデルのベースラインとして保存）。
-→ 次は **PHASE 4.5：現在地・地点検索・道路に沿った経路**（ユーザー受入テストで発生した追加要件。計画を立ててユーザーに報告してから実装する）
+**PHASE 4：フロントエンド実装** — 完了（PR #4、squash コミット `da66ea4`。直線距離モデルのベースラインとして保存）。
+**PHASE 4.5：地点指定の拡張と道路に沿った経路** — **仕様は確定した**（`docs/plan.md` §6）。実装は**新しいセッションで始める**。FOSSGIS の実 API を使う前に、連絡先メールアドレスの要件への対応（plan §6.10）を決める
 
 ## 現在のブランチと Git の状態
 - リモート：`origin` = https://github.com/EnKyria/chariroute-lab（**public**）
 - `main`：`dfffd2c`（PHASE 1）→ `89848ed`（PR #1、CI）→ `011db28`（PR #2、PHASE 2 の引き継ぎ）→ PR #3（PHASE 3、経路検索 API）の squash コミット
-- 作業ブランチ：`feature/frontend`（`main` の `cde6e33` から作成）→ PR で squash マージし、削除する。`feature/route-search` は削除済み
+- `main`：… → PR #4（PHASE 4）の squash コミット `da66ea4`。`feature/frontend` はリモートとローカルの両方から削除済み（中身の一致を確認済み）
+- 作業ブランチ：`feature/road-routing`（`da66ea4` から作成）。PHASE 4 の残作業（uvicorn の追加、README）と、PHASE 4.5 の確定した仕様（docs）が入っている。コミット・push・PR・squash マージ・ブランチの削除は承認済み（条件：CI が成功し、重大な問題がなく、最終コミットが変わっていないこと）
 - `main` は ruleset `protect-main`（ID 28061644）で保護している。**直接 push はできない**ので、変更は必ず `feature/<名前>` ブランチ → PR → CI（`check`）が緑 → squash マージ、の順で行う
 - マージ済みのブランチは、リモートとローカルの両方から削除する。squash マージ後は `git branch -d` が使えないため、`git diff --quiet main <branch>` で中身が同じことを確かめてから `-D` で削除する
 - コミットの作者：ローカル設定の `EnKyria <36327617+EnKyria@users.noreply.github.com>`
@@ -56,6 +57,34 @@
 - `package-lock.json` を Git 管理し、CI では `npm ci` を使う
 - 本番は CloudFront 経由の同一オリジン、ローカルは Vite の proxy
 - MVP 完成を優先し、ハーネスの追加改善はしない。PHASE 4 の完了時点で停止し、AWS の操作はまだ行わない
+- ユーザーがブラウザで画面を確認した。受入テストで追加要件が出た → PHASE 4 はコミット・PR・マージしてベースラインとして保存し（PR #4 は承認済みでマージ済み）、**PHASE 4.5** として計画する
+- PHASE 4.5 の外部 API は openrouteservice を第一候補にする（→ 下記で取りやめ）
+- 明日の技術面接に向けて、過剰な設計は避ける
+- **PHASE 4.5 の方針を変更した**：openrouteservice は採用しない（新規のアカウント登録、API キーの発行、課金リスクを避けるため）。Muse で作った同様のアプリにならい、キーが不要な **FOSSGIS OSRM**（routed-bike / routed-foot。Table で候補を評価し、Route で経路を描く）と **Nominatim**（地点検索）を使う
+- 外部サービスの利用の制約：
+  - 個人利用・学習用の、低頻度の利用に限る
+  - サービスごとに 1 秒 1 リクエストを守る。複数の Lambda が同時に動いても超えない設計にする
+  - 大量の検索や並列リクエストはしない
+  - アプリを識別できる User-Agent を付ける。クレジットと地図修正リンクを表示する
+  - Nominatim のオートコンプリートはしない。**地点検索は、開発者が規約を確認して承認した後に実装する**
+  - Nominatim に個人情報を送らない
+  - URL は設定で変えられるようにする
+  - 障害時にダミー経路を返さない
+  - 座標が外部に送信され、保存されうることを利用者に明示する
+- 一般公開は前提にしない。AWS にデプロイするときにアクセス制限を検討する
+- PHASE 4 の残作業：**開発用の uvicorn の追加を承認**（`requirements-dev.txt`）。README に起動手順を書く。uvicorn と Vite の連携を確認する。Node.js の更新の理由と承認の状況を記録する
+- 今回のセッションは、計画の修正と引き継ぎの準備までにする。実装は新しいセッションで始める
+- **PHASE 4.5 の最終決定**（これまでの指示と矛盾する場合は、こちらを優先する。詳細は plan §6）：
+  - 目的：効率的な貸出・返却ポートの組み合わせを探す。Google マップとの差別化のため、シェアサイクル固有の課題に集中する
+  - 技術：GBFS、FOSSGIS OSRM、Nominatim、Geolocation、Leaflet + OSM、FastAPI、React。キー・有料契約・クレジットカードが不要な構成を維持する。openrouteservice は不採用
+  - 地点の指定：GPS、地点検索（駅名・公開施設名）、プリセット、地図のタップ。出発地と目的地を自由に設定でき、入れ替えられる
+  - **廃止**：徒歩のみの経路、徒歩との比較、おすすめの判定、時間の短縮効果
+  - アルゴリズム：直線距離で各 10 件 + 直線距離モデルの最適な組（重複は除く。最大 11 件ずつ）。Table を 2 回、Route を 3 回で、1 回の検索あたり 5 リクエスト
+  - 所要時間：道路距離 ÷ 独自の速度（徒歩 4.8・自転車 15 km/h）+ 手続き時間。第一案で、実環境で道路距離が取れることを確かめてから確定する
+  - 障害時：**B 案（503）**。フォールバックしない
+  - **利用規約は開発者本人が確認し、OSRM と Nominatim の採用を承認した**（個人利用・非商用・低頻度）。条件と対応は engineering-notes §9.5
+  - **未解決**：FOSSGIS の規約にある「連絡先メールアドレス」の要件。個人のメインのアドレスを勝手に公開しない。対応方法が決まるまで、実 API を使わない
+  - AWS の操作は承認しない（PHASE 6 で検討する）。レート制限を保証できない場合は、本番での実 API の利用を始めない
 
 ## 完了済みタスク
 ### PHASE 1（2026-11-25 完了）
@@ -95,7 +124,12 @@
 - [x] reviewer：must 0 件。should 4 件のうち 3 件を修正（応答の検証の強化、検索中の入力の無効化、プリセット 0 件のエラー）、1 件（地図の依存の追加理由）は engineering-notes に記録済み。nit の「差分の丸め」も修正
 
 ## 未完了タスク（以降のフェーズ）
-- [ ] **PHASE 4.5**：現在地・地点検索・道路に沿った経路（計画の報告 → ユーザーの承認 → 実装）
+- [x] PHASE 4 の残作業：uvicorn 0.54.0 を `requirements-dev.txt` に追加し、venv にインストールした。`README.md` に起動手順を書いた。uvicorn + Vite の proxy で API の連携を確認した（下記）。Node.js の更新の理由と承認を engineering-notes §2 に記録した
+- [x] PHASE 4.5 の調査：
+  - researcher（1 回目）：ORS → 不採用（engineering-notes §9.1）
+  - researcher（2 回目）：FOSSGIS OSRM・Nominatim・OSRM の API 仕様・AWS の同時実行数（§9.2〜9.4）
+- [x] PHASE 4.5 の仕様の確定（`docs/plan.md` §6、CLAUDE.md の要件、engineering-notes §9.5・§9.6）
+- [ ] **PHASE 4.5 の実装**（新しいセッション）：plan §6.13 の順に進める
 - [ ] **PHASE 5**：ローカル結合確認
 - [ ] **PHASE 6**：AWS CLI の導入と認証設定、棚卸し、Lambda ビルド、HTTP API、S3 + CloudFront、CloudWatch
 - [ ] **PHASE 7**：総合評価・技術知見の整理
@@ -122,6 +156,13 @@
 - Mangum 0.22 で DeprecationWarning が出る（動作には影響なし）
 - **PHASE 4 で見つかったこと**：
   - **ユーザー受入テストで発生した追加要件**（→ PHASE 4.5）：直線の経路が川などを横断して実用的でない、現在地から検索したい、プリセット以外の地点を検索したい
+- **PHASE 4.5 の未確認事項**：
+  - ~~FOSSGIS の利用規約の本文~~ → 開発者本人が確認した（2026-11-25）
+  - **FOSSGIS の連絡先メールアドレスの要件への対応**（plan §6.10）。決まるまで実 API を使わない
+  - Table で道路距離（`annotations=distance`）を取得できることの正式な確認（plan §6.5。researcher の 1 回の確認では返った）
+  - 公開 OSRM の Table の最大サイズ
+  - Nominatim の日本語の精度
+  - 実行環境が入れ替わった直後の、送信間隔のわずかなリスク（plan §6.4）
   - ローカルに ASGI サーバーがない（uvicorn は未導入）。PHASE 5 で導入するか判断する（依存の追加になるので承認が必要）
   - 小文字のドライブ文字（`d:\`）から `npm test` を直接実行すると Vitest が失敗する（check.py 経由では起きない。engineering-notes §5）
   - OSM の公式タイルは SLA がなく、予告なく遮断されうる。利用が増える場合はタイルの提供元を切り替える。CloudFront で Referrer-Policy を設定するときは Referer を消さない（PHASE 6）
@@ -149,6 +190,12 @@
 - GitHub Actions を、メジャータグ（`actions/checkout@v5`、`actions/setup-python@v6`）ではなくコミット SHA に固定する（Dependabot での更新もあわせて検討する）
 
 ## 最新の品質チェック結果
+- 2026-11-25（セッション 4 の終了時、`feature/road-routing`、仕様の確定後）：`python scripts/check.py` → **ALL PASSED**（ruff OK、pytest 427 件、vitest 22 件、lint / typecheck / build OK）
+- **uvicorn + Vite の連携の確認**（2026-11-25、手動）：
+  - `uvicorn main:app --port 8000` と `npm run dev` を起動し、Vite の proxy 経由で確認した。
+  - `GET /api/presets` が 200、`POST /api/routes/search`（大阪城公園 → 天王寺駅）が 200（`bike_share` あり、合計 35.7 分、徒歩 75.7 分）。
+  - 不明な地点で 400、形式エラーで 422、画面の配信は 200。
+  - `GBFS_BASE_URL` を到達できない URL にしたインスタンスで、503 が返ることも確認した。
 - 2026-11-25（セッション 4、`feature/frontend`）：`python scripts/check.py` → **ALL PASSED**
   - ruff：All checks passed / pytest：427 件成功（警告 1 件：Mangum の DeprecationWarning）
   - npm lint / typecheck：OK、vitest：22 件成功、vite build：OK（JS 約 386KB、gzip 約 118KB）
@@ -163,7 +210,12 @@
 - GitHub Actions：PR #1 でジョブ `check` が pass（ruff OK、pytest 9 件、`check.py: ALL PASSED`）
 
 ## 次にやること
-1. **PHASE 4.5**：`feature/route-engine` などのブランチで、計画（`docs/plan.md`）に沿って実装する。APIキーの発行はユーザーが行う
+1. **PHASE 4.5 の実装（新しいセッション）**：
+   1. `git switch main && git pull --ff-only` を実行し、`git log --oneline -3`、`gh api user --jq .login`（`EnKyria`）、`python scripts/check.py`（ALL PASSED）を確認する。
+   2. このファイル、`docs/plan.md` §6（確定した仕様）、`docs/engineering-notes.md` §9.5・§9.6 を読む。
+   3. `feature/<名前>` ブランチを作る。
+   4. ユーザーに、連絡先メールアドレスの要件への対応（plan §6.10）を確認する。決まるまでは、実 API を使う手順（スモークテスト）を飛ばす。
+   5. plan §6.13 の順に進める：evaluator → バックエンド → フロント → （解決後）スモークテスト → 地点検索 → reviewer → PR。
 2. **PHASE 5：ローカル結合確認**
    - ローカルの API サーバー：uvicorn を `requirements-dev.txt` に追加するか判断する（承認が必要）。追加しない場合は、http.server から `main.handler` に渡すブリッジ（engineering-notes §5）をスクリプト化する
    - 起動：`(cd frontend && npm run dev)` で Vite（http://127.0.0.1:5173、`/api` は 127.0.0.1:8000 に転送）
