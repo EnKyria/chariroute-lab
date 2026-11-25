@@ -4,13 +4,14 @@
 会話履歴にしか残っていない重要な情報は、ここか `docs/plan.md` / `docs/engineering-notes.md` に書き移す。
 フェーズ番号の定義は `docs/plan.md` §5 を参照。
 
-最終更新：2026-11-25（セッション 2 の終了時）
+最終更新：2026-11-25（セッション 3：PHASE 3 の実装完了時）
 
 ## 現在のフェーズ
-**PHASE 2：GitHub・CI 構築** — 完了（引き継ぎ用 PR `feature/phase2-handoff` のマージをもって完了）。
-→ 次は **PHASE 3：バックエンド実装**
+**PHASE 3：バックエンド実装** — 実装・テスト・レビュー対応まで完了。**未コミット**（ブランチ `feature/route-search`）。
+→ ユーザーの承認を得てコミット → push → PR → CI が緑になったら squash マージ。その後 **PHASE 4：フロントエンド実装**
 
 ## 現在のブランチと Git の状態
+- 作業ブランチ：`feature/route-search`（`main` の `011db28` から作成）。変更はすべて未コミット
 - リモート：`origin` = https://github.com/EnKyria/chariroute-lab（**public**）
 - `main`：`dfffd2c`（PHASE 1）→ `89848ed`（PR #1、CI の追加、squash マージ）→ 引き継ぎ用 PR
 - `main` は ruleset `protect-main`（ID 28061644）で保護している。**直接 push はできない**ので、変更は必ず `feature/<名前>` ブランチ → PR → CI（`check`）が緑 → squash マージ、の順で行う
@@ -40,6 +41,11 @@
 - マージは **squash** で行い、マージ済みのブランチは削除する
 - ブランチ保護の検証のために、`main` へ直接 push してはいけない
 
+### 2026-11-25（セッション 3）
+- MVP 完成までの開発速度を優先する。ハーネスの追加改善や環境整備は、実装の妨げにならない限り行わない
+- Git Credential Manager の資格情報の保存エラーは、未解決事項として記録だけする（今回は修正しない）
+- PHASE 3 の完了時点で停止する。フロントエンドの実装と AWS の変更はまだ行わない
+
 ## 完了済みタスク
 ### PHASE 1（2026-11-25 完了）
 - [x] 既存リポジトリの調査、Python 3.12 の venv、requirements、特性テスト（9 件）
@@ -55,8 +61,18 @@
 - [x] `main` のブランチ保護（ruleset `protect-main`）の設定と、API による設定内容の確認
 - [x] 引き継ぎ用 PR で、必須チェック `check` が機能することを確認（結果は「ブランチ保護の検証結果」を参照）
 
+### PHASE 3（2026-11-25 実装完了、コミット待ち）
+- [x] researcher：大阪エリアの範囲（公式：大阪市のみ、エリア外への返却は不可）、接頭辞・Z 系・バッテリー交換専用の拠点（公式資料なし）、ODPT の規約（上限は未確認）
+- [x] 実データの分析 → 大阪エリアの判定方法の決定（`docs/plan.md` §1）
+- [x] evaluator：評価シナリオ 47 件と、未確定の仕様 9 件 → 決定して明文化（`docs/engineering-notes.md` §2・§7）
+- [x] `backend/app/`（routing / gbfs / presets）と `backend/main.py` の置き換え（ダミーの応答を削除）
+- [x] テスト 427 件（経路計算・GBFS・API・Lambda）。テストから外部ネットワークに接続できないガード付き
+- [x] 最終確認（ユーザーの指示）：組み合わせの評価を K=10 の近似から**最適解を保証する分枝限定法**に変更。総当たりとの性能比較、大阪エリア判定の技術的負債の記録、フィクスチャのライセンスと機密情報の確認（README を追加）
+- [x] 実 GBFS での疎通確認と性能の計測（`backend/tools/smoke_gbfs.py`）
+- [x] reviewer：must 3 件を修正、should は修正または PHASE 6 への記録で対応
+
 ## 未完了タスク（以降のフェーズ）
-- [ ] **PHASE 3**：GBFS の取得・キャッシュ、大阪市内のポート抽出、失敗時に 503、K×K の経路計算、プリセット API
+- [ ] **PHASE 3 の締め**：コミット → PR → CI → squash マージ → ブランチの削除（すべてユーザーの承認が必要）
 - [ ] **PHASE 4**：フロントエンド（React / TS / Vite）
 - [ ] **PHASE 5**：ローカル結合確認
 - [ ] **PHASE 6**：AWS CLI の導入と認証設定、棚卸し、Lambda ビルド、HTTP API、S3 + CloudFront、CloudWatch
@@ -64,17 +80,20 @@
 
 ## 重要な設計判断（詳細は `docs/engineering-notes.md` §2）
 - AWS 構成：API Gateway HTTP API → Lambda（プロキシ統合、Mangum）、フロントは S3 + CloudFront
-- 経路は直線距離 × 迂回係数 1.3 で概算し、ポートの組み合わせは K×K（K=10）で評価する
+- 経路は直線距離 × 迂回係数 1.3 で概算し、利用可能な全てのポートの組から最小を選ぶ（分枝限定法。最適解を保証。当初の K×K は廃止）
 - GBFS の取得に失敗したら 503 を返し、ダミー値は返さない
 - 品質ゲートは `scripts/check.py` の 1 か所に集約（人・Stop Hook・CI で共通）。CI には環境構築だけを書く
 - サブエージェントは読み取り専用とし、ファイルの変更はメインエージェントだけが行う
 - コミットには noreply アドレスを使う（ローカル設定にのみ設定）
 
 ## 未解決の問題
-- **`backend/main.py` の `/api/routes/search` は固定のダミー応答を返す暫定実装**（GBFS を取得しない）。PHASE 3 で置き換えるまでは、AWS へのデプロイや公開をしない。置き換える際は、特性テストを変更する理由をコミットメッセージに書く
-- 大阪市内のポートの抽出方法（`system_regions` が 404 で、`region_id` の意味が不明） → PHASE 3
-- エリアをまたいだ返却の不可への対応（隣接市のポートを除外する） → PHASE 3
-- ODPT のアクセス頻度に関する規約が未確認 → PHASE 3
+- **技術的負債：大阪エリアの判定**は、実データにもとづく仮定（接頭辞の意味と Z 系の扱いは公式資料なし）。新しいポートが市外に追加されると誤判定しうる。改善方法（行政区域のポリゴンによる判定など）は `docs/engineering-notes.md` §7
+- 分枝限定法の最悪の計算量は総当たりと同じ（下限が効かない配置では約 0.8 秒）。実データでは起きていない
+- ODPT のアクセス頻度の上限と、クレジット表記の正式な文言は未確認
+- GBFS の取得タイムアウトはソケット操作ごとの値で、合計の締め切りではない → PHASE 6 で Lambda のタイムアウトを 15 秒にする
+- API Gateway のステージは `$default` を使う（別名ならパスがずれる） → PHASE 6
+- **Git Credential Manager の資格情報の保存エラー**：未解決。ユーザーの指示で、今回は記録だけにして修正しない
+- reviewer の nit で未対応のもの：キャッシュの経過時間に `time.time` を使っている（時計の巻き戻りに弱い）、status のない info を数えていない、`last_updated` が float だと全体が 503 になる（実フィードは int）
 - 既存の AWS 環境（Lambda の有無・ランタイム）が未確認 → PHASE 6
 - Stop Hook：セッション 2 で、状態ファイル `.claude/.cache/stop-hook-state.json` が `stop_hook.py` の修正後に更新されていたため、**動作していると推定**。`/hooks` での目視確認はまだ。サブエージェント（reviewer）は読み込まれ、動作を確認済み
 - Mangum 0.22 で DeprecationWarning が出る（動作には影響なし）
@@ -100,22 +119,20 @@
 - GitHub Actions を、メジャータグ（`actions/checkout@v5`、`actions/setup-python@v6`）ではなくコミット SHA に固定する（Dependabot での更新もあわせて検討する）
 
 ## 最新の品質チェック結果
+- 2026-11-25（セッション 3、`feature/route-search`）：`python scripts/check.py` → **ALL PASSED**
+  - ruff：All checks passed
+  - pytest：427 件成功（警告 1 件：Mangum の DeprecationWarning）
+  - 実 GBFS での疎通確認（手動）：取得と検証 0.68 秒、大阪エリアのポート 745 件、経路計算（分枝限定法）中央値 3.05ms・最大 4.48ms、素朴な総当たり 中央値 778ms、両者の結果の差 0 件（56 組）
 - 2026-11-25（セッション 2、`feature/ci`）：`python scripts/check.py` → **ALL PASSED**
   - ruff：All checks passed
   - pytest：9 件成功（警告 1 件：Mangum の DeprecationWarning）
   - CI と同じ `CHECK_PYTHON` の経路でも成功。Python が見つからない場合は exit 2 になることも確認
 - GitHub Actions：PR #1 でジョブ `check` が pass（ruff OK、pytest 9 件、`check.py: ALL PASSED`）
 
-## 次にやること（PHASE 3：バックエンド実装）
-1. このファイルを読み、`git switch main && git pull --ff-only` と `git log --oneline -5` で状態を確認する。`gh api user --jq .login` が `EnKyria` であることも確認する
-2. `/hooks` で Stop Hook が読み込まれていることを目視で確認する（未確認）
-3. 未解決の問題のうち、PHASE 3 の前提になる 3 点を調べる。調査は `researcher` に任せる
-   - 大阪市内のポートの抽出方法
-   - エリアをまたいだ返却への対応
-   - ODPT のアクセス頻度に関する規約
-4. `feature/gbfs-client` などのブランチを切る。`evaluator` に要求仕様を渡してテストケースを設計させてから、テスト先行で実装する
-   - GBFS の取得、キャッシュ、失敗時の 503
-   - 大阪市内のポートの抽出
-   - K×K の経路計算
-   - プリセット API
-5. 特性テストを置き換えるときは、その理由をコミットメッセージに書く（`.claude/rules/testing.md`）
+## 次にやること
+1. このファイルを読み、`git status` と `git log --oneline -5` で状態を確認する。`gh api user --jq .login` が `EnKyria` であることも確認する
+2. **PHASE 3 の締め**（ユーザーの承認後）：`feature/route-search` をコミットする。特性テストを置き換えた理由をコミットメッセージに書く。その後 push → PR → CI（`check`）が緑 → squash マージ → ブランチの削除
+3. **PHASE 4：フロントエンド**（`frontend/`、React + TS + Vite）。依存の追加は承認が必要
+   - API の型は backend の Pydantic モデル（`backend/main.py`）と同じフィールド名にする
+   - `recommended`、`bike_share: null`、503 の表示（「ポート情報を取得できません」）、`data.attribution` のクレジット表示
+   - CORS：ローカルの結合（PHASE 5）では Vite の proxy を使うか、FastAPI に CORS を設定する（本番は HTTP API 側で設定する予定）
