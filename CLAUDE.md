@@ -67,7 +67,8 @@ backend/.venv/Scripts/python.exe -m pytest backend/tests -k <name>   # 個別の
 - 必要に応じて `docs/` を更新済み。
 
 ## GitHub の操作範囲
-- **操作してよいリポジトリ：`EnKyria/chariroute-lab` だけ。** これ以外のリポジトリや Organization は、読み取りも含めて操作しない（許可リスト方式）。
+- **変更操作をしてよいリポジトリ：`EnKyria/chariroute-lab` だけ。** 許可リスト方式で、これ以外のリポジトリや Organization には変更操作（作成・push・Issue/PR・設定変更など）をしない。
+- 例外として、技術調査を目的に、外部の**公開**リポジトリや公式ドキュメントを読み取り専用で参照してよい。非公開リポジトリにはアクセスしない。
 - GitHub を操作する前に `gh api user --jq .login` で、認証中のアカウントが `EnKyria` であることを確認する。`gh` のコマンドでは `--repo EnKyria/chariroute-lab` のように対象を明示する。
 - コミットの作者は、ローカル設定の `EnKyria <36327617+EnKyria@users.noreply.github.com>` とする。
 

@@ -1,0 +1,40 @@
+# 品質ゲート scripts/check.py を GitHub Actions で実行する。
+# チェックの中身は check.py にだけ書き、ここには環境構築だけを書く（.claude/rules/testing.md）。
+# ジョブ名 "check" は main のブランチ保護で必須のステータスチェックとして参照するため、変更しない。
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12" # Lambda ランタイムと合わせる
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Install backend dependencies
+        run: python -m pip install -r backend/requirements-dev.txt
+
+      - name: Run quality gate
+        env:
+          CHECK_PYTHON: python # venv を作らず、setup-python の 3.12 を使う
+        run: python scripts/check.py
