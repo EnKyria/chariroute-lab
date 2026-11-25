@@ -8,7 +8,7 @@
 
 import math
 import os
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -20,6 +20,7 @@ from app.outbound import (
     Fetcher,
     OutboundError,
     RateLimiter,
+    external_apis_enabled,
     http_get_json,
     https_url,
     outbound_headers,
@@ -32,11 +33,12 @@ NO_ROUTE_CODES = frozenset({"NoRoute", "NoTable", "NoSegment"})
 
 
 class OsrmError(Exception):
-    """OSRM の失敗（503 にする）。"""
+    """OSRM の失敗（503 にする）。disabled は、設定で外部への送信を止めているとき True。"""
 
-    def __init__(self, message: str, *, busy: bool = False) -> None:
+    def __init__(self, message: str, *, busy: bool = False, disabled: bool = False) -> None:
         super().__init__(message)
         self.busy = busy
+        self.disabled = disabled
 
 
 class OsrmNoRoute(Exception):
@@ -80,7 +82,8 @@ class OsrmClient:
     def __init__(self, foot_url: str | None = None, bike_url: str | None = None,
                  limiter: RateLimiter | None = None, fetch: Fetcher = http_get_json,
                  timeout: float = REQUEST_TIMEOUT_SECONDS,
-                 table_timeout: float = TABLE_TIMEOUT_SECONDS) -> None:
+                 table_timeout: float = TABLE_TIMEOUT_SECONDS,
+                 enabled: Callable[[], bool] = external_apis_enabled) -> None:
         self.urls: dict[Profile, str] = {
             "foot": https_url(foot_url or os.environ.get("OSRM_FOOT_URL"),
                               DEFAULT_OSRM_FOOT_URL, "OSRM_FOOT_URL"),
@@ -91,12 +94,16 @@ class OsrmClient:
         self._fetch = fetch
         self.timeout = timeout  # Route
         self.table_timeout = table_timeout
+        self._enabled = enabled  # 送信のたびに確かめる（既定は環境変数。plan §7.3）
 
     def clock(self) -> float:
         return self.limiter.clock()
 
     def _get(self, profile: Profile, service: str, points: Sequence[Point],
              params: dict[str, str], deadline: float | None) -> dict[str, Any]:
+        if not self._enabled():
+            # リミッターより前で止める（待たない・送らない・送信回数に数えない）
+            raise OsrmError("外部 API への送信は設定で無効です", disabled=True)
         url = (f"{self.urls[profile]}/{service}/v1/driving/{_coords(points)}"
                f"?{query(params)}")
         headers = outbound_headers()

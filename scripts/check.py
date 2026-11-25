@@ -84,7 +84,20 @@ def check_frontend() -> int:
         for name in ("lint", "typecheck", "test", "build")
         if name in scripts
     ]
+    results.append(check_infra())
     return EXIT_OK if all(results) else EXIT_FAILED
+
+
+def check_infra() -> bool:
+    """infra/ の CloudFront Functions を、Node 標準のテストランナーで検証する（依存の追加なし）。"""
+    tests = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "infra").rglob("*.test.mjs"))
+    if not tests:
+        return True
+    node = shutil.which("node")
+    if node is None:
+        print("node が見つかりません。")
+        return False
+    return run("node --test (infra)", [node, "--test", *tests], ROOT)
 
 
 def main() -> int:

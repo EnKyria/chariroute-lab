@@ -61,6 +61,16 @@ def fake_clock() -> FakeClock:
     return FakeClock()
 
 
+# 本番の設定に関わる環境変数。開発者のシェルに残っていても、テストの結果が変わらないように消す
+_DEPLOY_ENV = ("EXTERNAL_APIS_ENABLED", "ORIGIN_VERIFY_SECRET", "AWS_LAMBDA_FUNCTION_NAME")
+
+
+@pytest.fixture(autouse=True)
+def _clean_deploy_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in _DEPLOY_ENV:
+        monkeypatch.delenv(name, raising=False)
+
+
 _LOOPBACK = ("127.0.0.1", "::1", "localhost")
 
 

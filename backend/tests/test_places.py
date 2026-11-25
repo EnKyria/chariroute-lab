@@ -17,7 +17,7 @@ SECRET = "秘密語XYZ駅"
 def make_client(fake: FakeNominatim, clock: ManualClock | None = None) -> PlacesClient:
     clock = clock or ManualClock()
     return PlacesClient("https://nominatim.test", RateLimiter(clock=clock, sleep=clock.sleep),
-                        fake, clock=clock)
+                        fake, clock=clock, enabled=lambda: True)
 
 
 @pytest.fixture

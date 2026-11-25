@@ -1,7 +1,9 @@
 """FOSSGIS OSRM の実 API を使った最小限のスモークテスト（手動実行用。pytest には含めない）。
 
 使い方（リポジトリのルートで実行）:
-    backend/.venv/Scripts/python.exe backend/tools/smoke_osrm.py
+    EXTERNAL_APIS_ENABLED=true backend/.venv/Scripts/python.exe backend/tools/smoke_osrm.py
+
+外部 API への送信は既定で無効（plan §7.3）。実行するときだけ、上のように明示的に有効にする。
 
 利用条件（docs/engineering-notes.md §9.5）を守るため：
 - 送るのは 1 回の経路検索の分だけ（Table 2 回 + Route 3 回 = 5 回）。
