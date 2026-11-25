@@ -5,9 +5,18 @@
 - バックエンド：FastAPI（Python 3.12）。AWS Lambda では Mangum 経由で動く
 - フロントエンド：React + TypeScript + Vite + Leaflet（OpenStreetMap のタイル）
 - データ：ODPT が公開しているドコモ・バイクシェアの GBFS（CC BY 4.0）
+- 道路の経路：FOSSGIS の OSRM（`routed-foot` / `routed-bike`）。地点検索：Nominatim（OpenStreetMap）
 
-所要時間は推定値です。現在の実装は、直線距離 × 迂回係数で計算しています。
-PHASE 4.5 では、FOSSGIS の OSRM による道路に沿った 3 区間（徒歩・自転車・徒歩）の経路、GPS・地点検索・地図のタップによる地点の指定を追加し、徒歩のみとの比較は廃止します（[docs/plan.md](docs/plan.md) §6）。
+出発地と目的地は、プリセット・現在地（GPS）・地点検索（駅名・施設名）・地図のタップで指定できます。
+貸出・返却ポートの候補（直線距離で各最大 11 か所）の全ての組を OSRM の道路距離で評価し、
+徒歩（出発地 → 貸出）・自転車（貸出 → 返却）・徒歩（返却 → 目的地）の合計の推定所要時間が最小の組を、
+道路に沿った経路として表示します（[docs/plan.md](docs/plan.md) §6）。
+
+- 所要時間は、道路距離 ÷ 一定の速度（徒歩 4.8 km/h・自転車 15 km/h）+ 貸出・返却の手続き（各 1 分）の**推定値**です。
+- 候補を直線距離で絞り込むため、全てのポートの組の中での最適解は保証しません。
+- 外部の公開サービス（FOSSGIS・Nominatim）は、個人利用・非商用・低頻度の範囲で利用しています。
+  リクエストは各サービスで 1.1 秒以上の間隔を空けて直列に送り、自動リトライはしません。
+- 運営者の連絡先：chariroute.dev@gmail.com
 
 ## 必要な環境
 
@@ -37,20 +46,24 @@ cd frontend && npm ci && cd ..
 ```bash
 # 1. API サーバー（http://127.0.0.1:8000）
 cd backend
-.venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+.venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
 ```bash
-# 2. 画面（http://127.0.0.1:5173）。/api へのリクエストは Vite の proxy で 127.0.0.1:8000 に転送される
+# 2. 画面（http://localhost:5173）。/api へのリクエストは Vite の proxy で 127.0.0.1:8000 に転送される
 cd frontend
 npm run dev
 ```
 
-ブラウザで http://127.0.0.1:5173 を開きます。API のスキーマは http://127.0.0.1:8000/docs で確認できます。
+ブラウザで http://localhost:5173 を開きます（Vite は `localhost` で待ち受けます。環境によっては `127.0.0.1` では開けません）。
+現在地の取得は、HTTPS か `localhost` で開いたページでだけ動きます。API のスキーマは http://127.0.0.1:8000/docs で確認できます。
 
-- API サーバーは、検索のたびに ODPT の GBFS にアクセスします（60 秒間はキャッシュを使う）。インターネットへの接続が必要です。
+- API サーバーは、検索のたびに ODPT の GBFS（60 秒間はキャッシュを使う）と FOSSGIS の OSRM（1 回の検索で 5 リクエスト）にアクセスします。インターネットへの接続が必要です。1 回の検索には 15〜20 秒ほどかかります（自転車の Table が約 10 秒かかるため）。
+- **uvicorn は 1 プロセスで動かします**（`--workers` を使わない）。リミッターがプロセスごとなので、複数のプロセスでは 1 秒 1 回を保証できません。
+- **OSRM のスモークテスト（`backend/tools/smoke_osrm.py`）と開発サーバーを同時に動かさないでください**（FOSSGIS への同時接続を 1 つに保つため）。検索ボタンの連打や、自動化した繰り返しの検索もしないでください。
 - GBFS の取得に失敗したときの表示（503）を確かめるには、取得先を到達できない URL にして起動します：
   `GBFS_BASE_URL=https://127.0.0.1:9/gbfs .venv/Scripts/python.exe -m uvicorn main:app --port 8000`
+- 道路の経路を取得できないときの表示（503）も、同じように `OSRM_FOOT_URL=https://osrm.invalid/foot OSRM_BIKE_URL=https://osrm.invalid/bike` で確かめられます（FOSSGIS には接続しません）。
 
 ## 品質チェック
 
@@ -68,6 +81,10 @@ python scripts/check.py frontend   # frontend だけ
 | 変数 | 使う場所 | 内容 |
 |---|---|---|
 | `GBFS_BASE_URL` | backend | GBFS の取得先（https のみ）。既定は ODPT の docomo-cycle |
+| `OSRM_FOOT_URL` / `OSRM_BIKE_URL` | backend | OSRM の取得先（https のみ）。既定は `https://routing.openstreetmap.de/routed-foot` / `routed-bike` |
+| `NOMINATIM_URL` | backend | Nominatim の取得先（https のみ）。既定は `https://nominatim.openstreetmap.org` |
+| `OUTBOUND_USER_AGENT` | backend | 外部サービスに送る User-Agent。既定は `ChariRoute/0.1 (+https://github.com/EnKyria/chariroute-lab)` |
+| `OUTBOUND_REFERER` | backend | 外部サービスに送る Referer。設定したときだけ付ける（本番の URL が決まったら設定する） |
 | `VITE_API_BASE_URL` | frontend | API のベース URL。空なら同一オリジン（本番は CloudFront、ローカルは Vite の proxy） |
 | `VITE_TILE_URL` | frontend | 地図タイルの URL テンプレート。空なら OpenStreetMap の公式タイル |
 
@@ -82,4 +99,6 @@ python scripts/check.py frontend   # frontend だけ
 ## クレジット
 
 - ポート情報：株式会社ドコモ・バイクシェア / 公共交通オープンデータ協議会（[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/deed.ja)）のデータを加工して作成
-- 地図：© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
+- 地図・道路データ：© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors（ODbL）。地図の誤りは [fixthemap](https://www.openstreetmap.org/fixthemap) から報告できます
+- 道路の経路：[OSRM / FOSSGIS](https://routing.openstreetmap.de/about.html)（routing.openstreetmap.de）
+- 地点検索：[Nominatim](https://nominatim.org/) / OpenStreetMap

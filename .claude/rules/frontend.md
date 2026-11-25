@@ -7,7 +7,7 @@ paths:
 
 ## 方針
 - MVP は 1 画面（出発地・目的地のプリセット選択 → 検索 → 結果表示）。ルーティングライブラリや状態管理ライブラリは入れない。
-- 地図は Leaflet / React Leaflet + OpenStreetMap のタイル（PHASE 4 で導入）。線は直線の概算であることが分かる表現にし、OSM の帰属表示を地図上に出す（利用条件は `docs/engineering-notes.md` §8）。
+- 地図は Leaflet / React Leaflet + OpenStreetMap のタイル（PHASE 4 で導入）。PHASE 4.5 から、線は OSRM の Route の形状（道路に沿った経路）を描く。直線の概算は描かない。OSM の帰属表示を地図上に出す（利用条件は `docs/engineering-notes.md` §8）。
 - S3 + CloudFront で静的配信する。SSR や Node サーバー前提の機能は使わない。
 
 ## TypeScript

@@ -1,13 +1,22 @@
 // API クライアント。HTTP の詳細（URL、ステータスコード、エラー本文）はここで吸収し、
 // UI には「成功した型付きの値」か「種類つきの ApiError」だけを渡す。
-import type { PresetsResponse, RouteRequest, RouteResponse } from './types'
+import type {
+  PlacesRequest,
+  PlacesResponse,
+  PresetsResponse,
+  RouteRequest,
+  RouteResponse,
+} from './types'
 
 /** 空なら同一オリジン（本番は CloudFront、ローカルは Vite の proxy）。 */
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export type ApiErrorKind =
-  | 'input' // 400（不明な地点・同じ地点）、422（形式エラー）
+  | 'input' // 400（不明な地点・同じ地点・エリア外・道路が近くにない）、422（形式エラー）
   | 'gbfs_unavailable' // 503（GBFS の取得失敗）
+  | 'route_unavailable' // 503（OSRM の失敗。道路の経路を取得できない）
+  | 'places_unavailable' // 503（Nominatim の失敗）
+  | 'busy' // 503（外部サービスの混雑）、429（API の混雑）
   | 'server' // 上記以外の HTTP エラー
   | 'network' // 通信そのものの失敗
   | 'invalid_response' // 200 だが想定外の本文
@@ -28,9 +37,13 @@ function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null
 }
 
-/** FastAPI の HTTPException は detail が文字列。422 は配列なので使わない。 */
+/** 業務エラーは detail が文字列。422 は配列なので使わない。 */
 function detailOf(body: unknown): string | null {
   return isObject(body) && typeof body.detail === 'string' ? body.detail : null
+}
+
+function codeOf(body: unknown): string | null {
+  return isObject(body) && typeof body.code === 'string' ? body.code : null
 }
 
 async function readJson(res: Response): Promise<unknown> {
@@ -41,36 +54,73 @@ async function readJson(res: Response): Promise<unknown> {
   }
 }
 
-function toHttpError(status: number, body: unknown): ApiError {
+const UNAVAILABLE: Record<string, { kind: ApiErrorKind; message: string }> = {
+  gbfs_unavailable: {
+    kind: 'gbfs_unavailable',
+    message: 'ポート情報を取得できませんでした。しばらくしてから再度お試しください',
+  },
+  route_unavailable: {
+    kind: 'route_unavailable',
+    message: '道路の経路を取得できませんでした。しばらくしてから再度お試しください',
+  },
+  places_unavailable: {
+    kind: 'places_unavailable',
+    message: '地点を検索できませんでした。しばらくしてから再度お試しください',
+  },
+  route_busy: { kind: 'busy', message: '混雑しています。しばらくしてから再度お試しください' },
+  places_busy: { kind: 'busy', message: '混雑しています。しばらくしてから再度お試しください' },
+}
+
+function toHttpError(status: number, body: unknown, fallback503: string): ApiError {
   const detail = detailOf(body)
   switch (status) {
     case 400:
       return new ApiError('input', detail ?? '入力内容を確認してください', status)
     case 422:
       return new ApiError('input', '入力内容の形式が正しくありません', status)
-    case 503:
+    case 429:
+      return new ApiError('busy', '混雑しています。しばらくしてから再度お試しください', status)
+    case 504:
       return new ApiError(
-        'gbfs_unavailable',
-        detail ?? 'ポート情報を取得できませんでした。しばらくしてから再度お試しください',
+        'route_unavailable',
+        '道路の経路を時間内に取得できませんでした。しばらくしてから再度お試しください',
         status,
       )
+    case 503: {
+      const known = UNAVAILABLE[codeOf(body) ?? fallback503] ?? UNAVAILABLE[fallback503]
+      if (!known) return new ApiError('server', 'サービスを利用できません（HTTP 503）', status)
+      return new ApiError(known.kind, detail ?? known.message, status)
+    }
     default:
       return new ApiError('server', `サーバーでエラーが発生しました（HTTP ${status}）`, status)
   }
 }
 
-async function request(path: string, init?: RequestInit): Promise<unknown> {
+/** サーバーの検索の締め切り（25 秒）と API Gateway の上限（30 秒）より長くする。 */
+export const REQUEST_TIMEOUT_MS = 35_000
+
+async function request(path: string, init: RequestInit | undefined, fallback503: string) {
   let res: Response
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   try {
     res = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: { Accept: 'application/json', ...init?.headers },
+      signal: controller.signal,
     })
   } catch {
-    throw new ApiError('network', 'サーバーに接続できませんでした。通信環境を確認してください')
+    throw new ApiError(
+      'network',
+      controller.signal.aborted
+        ? '応答がありませんでした。しばらくしてから再度お試しください'
+        : 'サーバーに接続できませんでした。通信環境を確認してください',
+    )
+  } finally {
+    clearTimeout(timer)
   }
   const body = await readJson(res)
-  if (!res.ok) throw toHttpError(res.status, body)
+  if (!res.ok) throw toHttpError(res.status, body, fallback503)
   return body
 }
 
@@ -80,7 +130,7 @@ function isPresetsResponse(v: unknown): v is PresetsResponse {
 }
 
 function hasNumbers(v: unknown, keys: readonly string[]): boolean {
-  return isObject(v) && keys.every((k) => typeof v[k] === 'number')
+  return isObject(v) && keys.every((k) => typeof v[k] === 'number' && Number.isFinite(v[k]))
 }
 
 function hasStrings(v: unknown, keys: readonly string[]): boolean {
@@ -95,24 +145,33 @@ function isStation(v: unknown): boolean {
   return isPlace(v) && hasNumbers(v, ['num_bikes_available', 'num_docks_available'])
 }
 
-const BIKE_NUMBERS = [
-  'walk_to_rent_m',
-  'bike_m',
-  'walk_from_return_m',
-  'walk_to_rent_minutes',
-  'rent_minutes',
-  'bike_minutes',
-  'return_minutes',
-  'walk_from_return_minutes',
-  'total_minutes',
-] as const
+function isLatLon(v: unknown): boolean {
+  return (
+    Array.isArray(v) &&
+    v.length === 2 &&
+    v.every((x) => typeof x === 'number' && Number.isFinite(x))
+  )
+}
+
+function isLeg(v: unknown): boolean {
+  return (
+    isObject(v) &&
+    (v.mode === 'walk' || v.mode === 'bike') &&
+    hasNumbers(v, ['distance_m', 'minutes']) &&
+    Array.isArray(v.geometry) &&
+    v.geometry.every(isLatLon)
+  )
+}
 
 function isBikeShareRoute(v: unknown): boolean {
   return (
     isObject(v) &&
     isStation(v.rent_station) &&
     isStation(v.return_station) &&
-    hasNumbers(v, BIKE_NUMBERS)
+    Array.isArray(v.legs) &&
+    v.legs.length === 3 &&
+    v.legs.every(isLeg) &&
+    hasNumbers(v, ['rent_minutes', 'return_minutes', 'total_minutes'])
   )
 }
 
@@ -120,29 +179,48 @@ function isBikeShareRoute(v: unknown): boolean {
 function isRouteResponse(v: unknown): v is RouteResponse {
   return (
     isObject(v) &&
-    (v.recommended === 'bike_share' || v.recommended === 'walk') &&
     isPlace(v.origin) &&
     isPlace(v.destination) &&
-    hasNumbers(v.walk, ['distance_m', 'total_minutes']) &&
     hasStrings(v.data, ['last_updated', 'attribution', 'license', 'license_url', 'dataset_url']) &&
+    isObject(v.data) &&
+    hasStrings(v.data.routing, ['provider', 'map_data', 'fixthemap_url']) &&
     (v.bike_share === null || isBikeShareRoute(v.bike_share))
+  )
+}
+
+function isPlacesResponse(v: unknown): v is PlacesResponse {
+  return (
+    isObject(v) &&
+    Array.isArray(v.places) &&
+    v.places.every((p) => isPlace(p) && hasStrings(p, ['label']))
   )
 }
 
 const INVALID = 'サーバーから想定外の応答がありました'
 
 export async function fetchPresets(): Promise<PresetsResponse> {
-  const body = await request('/api/presets')
+  const body = await request('/api/presets', undefined, 'gbfs_unavailable')
   if (!isPresetsResponse(body)) throw new ApiError('invalid_response', INVALID)
   return body
 }
 
-export async function searchRoute(req: RouteRequest): Promise<RouteResponse> {
-  const body = await request('/api/routes/search', {
+function postJson(body: unknown): RequestInit {
+  return {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(req),
-  })
+    body: JSON.stringify(body),
+  }
+}
+
+export async function searchRoute(req: RouteRequest): Promise<RouteResponse> {
+  const body = await request('/api/routes/search', postJson(req), 'route_unavailable')
   if (!isRouteResponse(body)) throw new ApiError('invalid_response', INVALID)
+  return body
+}
+
+/** 地点検索。検索語を URL やアクセスログに残さないため POST で送る。 */
+export async function searchPlaces(req: PlacesRequest): Promise<PlacesResponse> {
+  const body = await request('/api/places/search', postJson(req), 'places_unavailable')
+  if (!isPlacesResponse(body)) throw new ApiError('invalid_response', INVALID)
   return body
 }

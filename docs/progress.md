@@ -4,17 +4,18 @@
 会話履歴にしか残っていない重要な情報は、ここか `docs/plan.md` / `docs/engineering-notes.md` に書き移す。
 フェーズ番号の定義は `docs/plan.md` §5 を参照。
 
-最終更新：2026-11-25（セッション 4 の終了時：PHASE 4 完了、PHASE 4.5 の仕様を確定）
+最終更新：2026-11-25（セッション 5：PHASE 4.5 完了。ユーザー受入テストで MVP として承認）
 
 ## 現在のフェーズ
 **PHASE 4：フロントエンド実装** — 完了（PR #4、squash コミット `da66ea4`。直線距離モデルのベースラインとして保存）。
-**PHASE 4.5：地点指定の拡張と道路に沿った経路** — **仕様は確定した**（`docs/plan.md` §6）。実装は**新しいセッションで始める**。FOSSGIS の実 API を使う前に、連絡先メールアドレスの要件への対応（plan §6.10）を決める
+**PHASE 4.5：地点指定の拡張と道路に沿った経路** — **完了**（ブランチ `feature/phase45-implementation` → PR → squash マージ。マージ後の `main` のコミットは、下の「現在のブランチと Git の状態」を参照）。ユーザー受入テストを経て、**現在の UI と機能を MVP として承認**された。次は PHASE 5（ローカル結合確認。受入テストで大部分を兼ねた）と PHASE 6（AWS）
 
 ## 現在のブランチと Git の状態
 - リモート：`origin` = https://github.com/EnKyria/chariroute-lab（**public**）
 - `main`：`dfffd2c`（PHASE 1）→ `89848ed`（PR #1、CI）→ `011db28`（PR #2、PHASE 2 の引き継ぎ）→ PR #3（PHASE 3、経路検索 API）の squash コミット
 - `main`：… → PR #4（PHASE 4）の squash コミット `da66ea4`。`feature/frontend` はリモートとローカルの両方から削除済み（中身の一致を確認済み）
-- 作業ブランチ：`feature/road-routing`（`da66ea4` から作成）。PHASE 4 の残作業（uvicorn の追加、README）と、PHASE 4.5 の確定した仕様（docs）が入っている。コミット・push・PR・squash マージ・ブランチの削除は承認済み（条件：CI が成功し、重大な問題がなく、最終コミットが変わっていないこと）
+- `main`：… → PR #5（`feature/road-routing`。PHASE 4 の残作業と PHASE 4.5 の仕様）の squash コミット `32bd870`。`feature/road-routing` はマージ済みで、リモートとローカルの両方にない（2026-11-25 に `gh pr view 5` と `git ls-remote` で確認）
+- 作業ブランチ：`feature/phase45-implementation`（`32bd870` から作成。セッション 5）。コミット・push・PR・squash マージ・ブランチの削除は承認済み（条件：CI が成功し、重大な問題がなく、最終コミットが変わっていないこと）
 - `main` は ruleset `protect-main`（ID 28061644）で保護している。**直接 push はできない**ので、変更は必ず `feature/<名前>` ブランチ → PR → CI（`check`）が緑 → squash マージ、の順で行う
 - マージ済みのブランチは、リモートとローカルの両方から削除する。squash マージ後は `git branch -d` が使えないため、`git diff --quiet main <branch>` で中身が同じことを確かめてから `-D` で削除する
 - コミットの作者：ローカル設定の `EnKyria <36327617+EnKyria@users.noreply.github.com>`
@@ -86,6 +87,28 @@
   - **未解決**：FOSSGIS の規約にある「連絡先メールアドレス」の要件。個人のメインのアドレスを勝手に公開しない。対応方法が決まるまで、実 API を使わない
   - AWS の操作は承認しない（PHASE 6 で検討する）。レート制限を保証できない場合は、本番での実 API の利用を始めない
 
+### 2026-11-25（セッション 5）
+- PHASE 4.5 の実装を開始する。仕様の再検討や大規模な追加調査はしない。重大な問題は修正し、軽微な改善は MVP の後に回す
+- **公開用の連絡先 `chariroute.dev@gmail.com` を作成し、公開を承認した**。フッターに mailto で表示する（FOSSGIS の連絡先の要件への対応。engineering-notes §9.5）
+- 他の規約への対応を確認したうえで、**FOSSGIS の実 API を使った最小限のスモークテストを承認した**（1 秒 1 回以下・直列を厳守）
+- ユーザーは外出中。実装・テスト・レビュー・品質チェックまで自律的に進める。軽微な設計判断は任せ、理由を engineering-notes に記録する。承認が必要な作業（AWS、依存の追加、コミット、push、PR、マージ）は保留する。ブラウザでの確認は帰宅後の確認事項にする
+- Nominatim の実 API について、**1〜2 回のスモークテストを承認した**（検索対象は駅名・公開施設名）。実行済み（2 回。engineering-notes §9.7）
+- **ユーザー受入テストを実施し、現在の UI と機能を MVP として承認した**。追加の機能開発とデザインの改善は不要
+- コミット・push・PR の作成を承認した。CI が成功し、重大な問題がなく、最終コミットが変わっていないことを条件に、squash マージと作業ブランチの削除まで承認した。PHASE 4.5 の完了報告の後は停止する。AWS の操作はまだ承認していない
+
+### ユーザー受入テストの結果（2026-11-25、ユーザーがブラウザで実施）
+- **確認できた（ユーザーの報告）**：現在地の取得、地点検索、道路に沿った経路の描画が正常に動作する
+- **未確認（ユーザーからの報告に含まれていない項目。確認したとは言えない）**：
+  - スマートフォン幅（360〜390px）での操作性（ボタンの重なり、地図の操作でページがスクロールしてしまわないか）
+  - 現在地の拒否・タイムアウトなどの失敗時の表示（自動テストでは確認済み）
+  - 大阪の外にいる場合の「対象エリアの外です」の表示
+  - 検索が遅いときの 503（締め切り 25 秒）の表示
+  - 実際の外部サービスの障害時の表示（ローカルでは到達できない URL で 503 を確認済み）
+- **既知の課題（改善は MVP の後）**：
+  - 「なんば駅」などの検索で、駅ではない地物（同じ名前の道路など）が候補に並ぶ（engineering-notes §9.7）
+  - 1 回の検索に 15〜20 秒ほどかかる（自転車の Table が約 9.7 秒）
+  - 本番でのレート制限の保証（Lambda の予約済み同時実行数 1）は PHASE 6 の前提条件
+
 ## 完了済みタスク
 ### PHASE 1（2026-11-25 完了）
 - [x] 既存リポジトリの調査、Python 3.12 の venv、requirements、特性テスト（9 件）
@@ -129,7 +152,14 @@
   - researcher（1 回目）：ORS → 不採用（engineering-notes §9.1）
   - researcher（2 回目）：FOSSGIS OSRM・Nominatim・OSRM の API 仕様・AWS の同時実行数（§9.2〜9.4）
 - [x] PHASE 4.5 の仕様の確定（`docs/plan.md` §6、CLAUDE.md の要件、engineering-notes §9.5・§9.6）
-- [ ] **PHASE 4.5 の実装**（新しいセッション）：plan §6.13 の順に進める
+- [x] **PHASE 4.5 の実装**（セッション 5、未コミット）：
+  - evaluator：テストケース（バックエンド約 60 件・フロント 17 件）と、曖昧な点 8 件 → 決め方を engineering-notes §9.7 に記録
+  - バックエンド：`app/outbound.py`（リミッター・ヘッダー・URL）、`app/osrm.py`、`app/road_routing.py`、`app/places.py`（Nominatim）、API の変更（Location、legs、`{detail, code}`、422 は入力値を返さない）、徒歩のみ・おすすめの削除
+  - フロントエンド：地点の指定（プリセット・現在地・地点検索・地図のタップ、入れ替え）、道路に沿った経路の描画、3 区間の距離と推定時間、503 の種類の区別、外部送信の事前の明示、帰属表示、フッターの連絡先
+  - 実 API のスモークテスト（2 回・合計 7 リクエスト）：Table で道路距離を取得できることを確認 → plan §6.5 を確定。自転車の Table が約 9.7 秒かかったため、タイムアウトを変更（Table 15 秒・検索全体 25 秒）
+  - reviewer：must 0 件。should 4 件と nit 2 件を修正、残りは延期または PHASE 6 の前提条件として記録
+  - ローカルでの結合確認（uvicorn + Vite の proxy。OSRM・Nominatim は到達できない URL にして、FOSSGIS には接続していない）：プリセット 200、同じ地点 400、エリア外 400、旧形式 422、OSRM の失敗 503（`route_unavailable`）、地点検索の失敗 503、GET の地点検索 405。サーバーのログに座標・検索語が出ないこと
+- [x] **PHASE 4.5 の完了**：ユーザー受入テストで MVP として承認 → コミット・push・PR・CI・squash マージ・ブランチの削除
 - [ ] **PHASE 5**：ローカル結合確認
 - [ ] **PHASE 6**：AWS CLI の導入と認証設定、棚卸し、Lambda ビルド、HTTP API、S3 + CloudFront、CloudWatch
 - [ ] **PHASE 7**：総合評価・技術知見の整理
@@ -156,11 +186,15 @@
 - Mangum 0.22 で DeprecationWarning が出る（動作には影響なし）
 - **PHASE 4 で見つかったこと**：
   - **ユーザー受入テストで発生した追加要件**（→ PHASE 4.5）：直線の経路が川などを横断して実用的でない、現在地から検索したい、プリセット以外の地点を検索したい
-- **PHASE 4.5 の未確認事項**：
+- **PHASE 4.5 の未確認事項・残存課題**：
   - ~~FOSSGIS の利用規約の本文~~ → 開発者本人が確認した（2026-11-25）
-  - **FOSSGIS の連絡先メールアドレスの要件への対応**（plan §6.10）。決まるまで実 API を使わない
-  - Table で道路距離（`annotations=distance`）を取得できることの正式な確認（plan §6.5。researcher の 1 回の確認では返った）
-  - 公開 OSRM の Table の最大サイズ
+  - ~~FOSSGIS の連絡先メールアドレスの要件~~ → 公開用のアドレスをフッターに表示して対応した（2026-11-25）
+  - ~~Table で道路距離を取得できるか~~ → 実 API で確認した（engineering-notes §9.7）
+  - **自転車の Table が約 9.7 秒かかる**（1 回の計測）。1 回の検索は 15〜20 秒。遅いときは締め切り（25 秒）を超えて 503 になりうる。改善するなら候補の数を減らす
+  - **本番でのレート制限の保証**：プロセス内のリミッターなので、Lambda の予約済み同時実行数を 1 にして確かめるまで、本番で実 API を使わない（PHASE 6）
+  - Nominatim の実 API：ユーザーの承認を受けてスモークテスト（2 回）を実行した。形式は想定どおり、応答は約 1.2〜1.3 秒。「なんば駅」で駅ではない地物（「なんば」という名前の道路など）が返る精度の課題がある（engineering-notes §9.7。改善は MVP の後）
+  - 延期した reviewer の指摘：取得中にコンポーネントが外れたときの setState、Nominatim の待ち行列の締め切り
+  - 公開 OSRM の Table の最大サイズ（使っているのは最大 24 点なので、問題になっていない）
   - Nominatim の日本語の精度
   - 実行環境が入れ替わった直後の、送信間隔のわずかなリスク（plan §6.4）
   - ローカルに ASGI サーバーがない（uvicorn は未導入）。PHASE 5 で導入するか判断する（依存の追加になるので承認が必要）
@@ -190,6 +224,10 @@
 - GitHub Actions を、メジャータグ（`actions/checkout@v5`、`actions/setup-python@v6`）ではなくコミット SHA に固定する（Dependabot での更新もあわせて検討する）
 
 ## 最新の品質チェック結果
+- 2026-11-25（セッション 5、`feature/phase45-implementation`、reviewer の指摘の修正後）：`python scripts/check.py` → **ALL PASSED**
+  - ruff：OK。pytest：**545 件成功**（警告 1 件：Mangum の DeprecationWarning）
+  - npm lint / typecheck：OK。vitest：**40 件成功**。vite build：OK（JS 約 397KB、gzip 約 122KB）
+  - 既存のテストの削除・変更は、廃止した機能（徒歩のみ・おすすめ・比較）と、API の形式の変更によるものだけ。理由はテストのコメントに書いた
 - 2026-11-25（セッション 4 の終了時、`feature/road-routing`、仕様の確定後）：`python scripts/check.py` → **ALL PASSED**（ruff OK、pytest 427 件、vitest 22 件、lint / typecheck / build OK）
 - **uvicorn + Vite の連携の確認**（2026-11-25、手動）：
   - `uvicorn main:app --port 8000` と `npm run dev` を起動し、Vite の proxy 経由で確認した。
@@ -210,13 +248,9 @@
 - GitHub Actions：PR #1 でジョブ `check` が pass（ruff OK、pytest 9 件、`check.py: ALL PASSED`）
 
 ## 次にやること
-1. **PHASE 4.5 の実装（新しいセッション）**：
-   1. `git switch main && git pull --ff-only` を実行し、`git log --oneline -3`、`gh api user --jq .login`（`EnKyria`）、`python scripts/check.py`（ALL PASSED）を確認する。
-   2. このファイル、`docs/plan.md` §6（確定した仕様）、`docs/engineering-notes.md` §9.5・§9.6 を読む。
-   3. `feature/<名前>` ブランチを作る。
-   4. ユーザーに、連絡先メールアドレスの要件への対応（plan §6.10）を確認する。決まるまでは、実 API を使う手順（スモークテスト）を飛ばす。
-   5. plan §6.13 の順に進める：evaluator → バックエンド → フロント → （解決後）スモークテスト → 地点検索 → reviewer → PR。
-2. **PHASE 5：ローカル結合確認**
-   - ローカルの API サーバー：uvicorn を `requirements-dev.txt` に追加するか判断する（承認が必要）。追加しない場合は、http.server から `main.handler` に渡すブリッジ（engineering-notes §5）をスクリプト化する
-   - 起動：`(cd frontend && npm run dev)` で Vite（http://127.0.0.1:5173、`/api` は 127.0.0.1:8000 に転送）
-   - ブラウザで目視確認：スマートフォン幅、地図タイルと帰属表示、GBFS の取得失敗時（`GBFS_BASE_URL` を到達できない https の URL にする）に 503 の表示になること
+1. **PHASE 5：ローカル結合確認**：ユーザー受入テスト（現在地・地点検索・経路描画）で大部分を確認済み。残りは上の「未確認」の項目（スマートフォン幅など）。必要なら、PHASE 6 の前に確認する。
+2. **PHASE 6：AWS**（**ユーザーの承認が必要。まだ承認されていない**）：AWS CLI の導入と認証設定、既存リソースの棚卸し、Lambda のビルド（manylinux・cp312）、HTTP API、S3 + CloudFront、CloudWatch。
+   - Lambda の予約済み同時実行数を 1 にし、レート制限を保証できることを確かめてから、本番で実 API を使う。確かめられないなら使わない（CLAUDE.md）。
+   - Lambda のタイムアウトは 30 秒。API Gateway HTTP API の統合タイムアウトの上限（30 秒）を、AWS の公式資料で確認する。
+   - 本番の URL が決まったら `OUTBOUND_REFERER` を設定する。一般公開は前提にしない（アクセス制限を検討する）。
+3. **PHASE 7**：総合評価・技術知見の整理。

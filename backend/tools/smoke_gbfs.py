@@ -79,8 +79,7 @@ def main() -> int:
         assert b is not None and can_rent(b.rent_station) and can_return(b.return_station)
         if (b.rent_station.station_id, b.return_station.station_id) != naive[1:]:
             mismatches += 1
-        print(f"{o.id:>14} -> {d.id:<14} 自転車 {b.total_minutes:5.1f} 分 / 徒歩 "
-              f"{r.walk.total_minutes:5.1f} 分 / {r.recommended:<10} / "
+        print(f"{o.id:>14} -> {d.id:<14} 自転車 {b.total_minutes:5.1f} 分 / "
               f"評価した組 {r.pairs_evaluated:>5} / "
               f"{b.rent_station.name} → {b.return_station.name}")
     times.sort()

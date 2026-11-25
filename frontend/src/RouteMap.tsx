@@ -1,9 +1,20 @@
-// 地図の表示（Leaflet / React Leaflet + OpenStreetMap タイル）。
-// 線は道路に沿った経路ではなく、地点どうしを結んだ直線（破線）で、概算であることを凡例に明記する。
+// 地図（Leaflet / React Leaflet + OpenStreetMap タイル）。
+// - 経路は OSRM の Route の形状（道路に沿った経路）を実線で描く。
+// - pickTarget が指定されている間は、地図のタップでその地点（出発地か目的地）を設定する。
 import 'leaflet/dist/leaflet.css'
-import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip } from 'react-leaflet'
-import type { RouteResponse } from './api/types'
-import { buildMapModel, type MapPointKind } from './mapPoints'
+import { useEffect } from 'react'
+import {
+  CircleMarker,
+  MapContainer,
+  Polyline,
+  TileLayer,
+  Tooltip,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet'
+import type { BikeShareRoute } from './api/types'
+import { buildMapModel, POINT_LABEL, type MapPointKind } from './mapPoints'
+import { OSAKA_CENTER, type SelectedPoint } from './points'
 
 // OSM のタイル利用規約：HTTPS のこの URL を使い、地図上に帰属表示を出す。URL は差し替え可能にしておく。
 const TILE_URL: string =
@@ -18,30 +29,59 @@ const COLOR: Record<MapPointKind, string> = {
   destination: '#b91c1c',
 }
 
-export default function RouteMap({ result }: { result: RouteResponse }) {
-  const { points, segments } = buildMapModel(result)
-  const bounds = points.map((p) => [p.lat, p.lon] as [number, number])
-  // 結果が変わったら作り直して、表示範囲（bounds）を合わせ直す
+export type PickTarget = 'origin' | 'destination'
+
+interface Props {
+  origin: SelectedPoint | null
+  destination: SelectedPoint | null
+  bike: BikeShareRoute | null
+  pickTarget: PickTarget | null
+  onPick: (target: PickTarget, lat: number, lon: number) => void
+}
+
+function ClickToPick({ target, onPick }: { target: PickTarget | null; onPick: Props['onPick'] }) {
+  useMapEvents({
+    click(e) {
+      if (target) onPick(target, e.latlng.lat, e.latlng.lng)
+    },
+  })
+  return null
+}
+
+function FitBounds({ bounds }: { bounds: [number, number][] }) {
+  const map = useMap()
   const key = bounds.flat().join(',')
+  useEffect(() => {
+    if (bounds.length >= 2) map.fitBounds(bounds, { padding: [32, 32], maxZoom: 17 })
+    else if (bounds.length === 1 && bounds[0]) map.setView(bounds[0], 15)
+    // key が変わったときだけ合わせ直す（タップのたびに地図が動かないよう、配列そのものは見ない）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, map])
+  return null
+}
+
+export default function RouteMap({ origin, destination, bike, pickTarget, onPick }: Props) {
+  const { points, lines, bounds } = buildMapModel(origin, destination, bike)
 
   return (
     <figure className="map">
       <MapContainer
-        key={key}
-        bounds={bounds}
-        boundsOptions={{ padding: [32, 32] }}
+        center={OSAKA_CENTER}
+        zoom={12}
         scrollWheelZoom={false}
-        className="map-canvas"
+        className={`map-canvas${pickTarget ? ' picking' : ''}`}
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} maxZoom={19} />
-        {segments.map((s, i) => (
+        <ClickToPick target={pickTarget} onPick={onPick} />
+        <FitBounds bounds={bounds} />
+        {lines.map((l, i) => (
           <Polyline
             key={i}
-            positions={[s.from, s.to]}
+            positions={l.positions}
             pathOptions={{
-              color: s.mode === 'bike' ? '#15803d' : '#475569',
-              weight: s.mode === 'bike' ? 5 : 3,
-              dashArray: s.mode === 'bike' ? '10 8' : '4 6',
+              color: l.mode === 'bike' ? '#15803d' : '#475569',
+              weight: l.mode === 'bike' ? 6 : 4,
+              opacity: 0.9,
             }}
           />
         ))}
@@ -59,17 +99,30 @@ export default function RouteMap({ result }: { result: RouteResponse }) {
         ))}
       </MapContainer>
       <figcaption>
+        {pickTarget && (
+          <p className="pick-hint" role="status">
+            地図をタップして{POINT_LABEL[pickTarget]}を指定してください
+          </p>
+        )}
         <ul className="legend">
-          {points.map((p) => (
-            <li key={p.kind}>
-              <span className="dot" style={{ background: COLOR[p.kind] }} aria-hidden="true" />
-              {p.label}
+          {(Object.keys(COLOR) as MapPointKind[]).map((k) => (
+            <li key={k}>
+              <span className="dot" style={{ background: COLOR[k] }} aria-hidden="true" />
+              {POINT_LABEL[k]}
             </li>
           ))}
+          <li>
+            <span className="line line-walk" aria-hidden="true" />
+            徒歩
+          </li>
+          <li>
+            <span className="line line-bike" aria-hidden="true" />
+            自転車
+          </li>
         </ul>
-        <p className="note">
-          破線は地点を直線で結んだ<strong>概算</strong>です。実際の道順ではありません。
-        </p>
+        {bike && (
+          <p className="note">線は OSRM で取得した道路に沿った経路です（OpenStreetMap のデータにもとづく）。</p>
+        )}
       </figcaption>
     </figure>
   )

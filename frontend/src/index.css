@@ -47,16 +47,8 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .card.alert-error { padding: 16px; }
 .card.alert-error p + p { margin-top: 4px; }
 
-.recommend h2 { font-size: 1.3rem; margin: 2px 0 4px; }
-.recommend-bike_share { background: var(--accent-weak); border-color: #86efac; }
 .route-names { color: var(--muted); font-size: 0.9rem; }
 
-.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
-.compare > div { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
-.compare > div.best { border-color: var(--accent); border-width: 2px; }
-.compare dt { font-size: 0.85rem; color: var(--muted); }
-.compare dd { margin: 0; font-size: 1.3rem; font-weight: 700; }
-.compare dd small { display: block; font-weight: 400; }
 
 .breakdown { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
 .breakdown th, .breakdown td { padding: 8px 0; border-bottom: 1px solid var(--border); text-align: left; font-weight: 400; vertical-align: top; }
@@ -82,3 +74,29 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .data-source p + p { margin-top: 4px; }
 .caution { font-size: 0.85rem; }
 .caution ul { margin: 0; padding-left: 1.2em; }
+
+/* PHASE 4.5：地点の指定・道路の経路・フッター */
+.picker { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px 12px; margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.picker legend { font-weight: 700; padding: 0 4px; }
+.picked { font-size: 0.95rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.picked .muted { color: var(--muted); }
+.tag-source { background: #475569; }
+.picker-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.picker-actions button { min-height: 44px; font-size: 0.88rem; padding: 0 4px; }
+.picker-actions button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-weak); font-weight: 700; }
+.place-search { display: flex; flex-direction: column; gap: 6px; }
+.place-search label { font-weight: 600; font-size: 0.9rem; }
+.place-search .note { margin-top: 0; }
+.place-row { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+.place-row input { font: inherit; min-height: 44px; border-radius: 10px; border: 1px solid #cbd5e1; padding: 0 10px; min-width: 0; }
+.place-row button { min-height: 44px; padding: 0 14px; }
+.place-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.place-results button { width: 100%; text-align: left; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.notice { font-size: 0.8rem; color: var(--muted); background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.map-canvas.picking { cursor: crosshair; outline: 3px solid var(--accent); }
+.pick-hint { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+.line { display: inline-block; width: 18px; height: 0; border-top: 4px solid #475569; margin-right: 4px; vertical-align: middle; }
+.line-bike { border-top-color: #15803d; border-top-width: 6px; }
+.summary h2 { font-size: 1.25rem; margin: 2px 0 4px; }
+.summary-found { background: var(--accent-weak); border-color: #86efac; }
+.app-footer { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
