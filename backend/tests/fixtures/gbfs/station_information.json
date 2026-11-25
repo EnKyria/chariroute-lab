@@ -1,0 +1,1233 @@
+{
+ "ttl": 60,
+ "data": {
+  "stations": [
+   {
+    "lat": 26.205044,
+    "lon": 127.673074,
+    "name": "T-27.奥武山公園(県立武道館前)",
+    "capacity": 5,
+    "region_id": "1",
+    "station_id": "4737"
+   },
+   {
+    "lat": 34.685473,
+    "lon": 135.51654,
+    "name": "B-14.グランパシフィック天満橋",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "7848"
+   },
+   {
+    "lat": 34.665493,
+    "lon": 135.492,
+    "name": "E-59.ナンバプレミアムグレース",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "4122"
+   },
+   {
+    "lat": 34.649664,
+    "lon": 135.521223,
+    "name": "F-26.大道4-3-25",
+    "capacity": 2,
+    "region_id": "1",
+    "station_id": "4331"
+   },
+   {
+    "lat": 34.70866,
+    "lon": 135.50277,
+    "name": "A-88.エステムプラザ梅田・中崎町3ツインマークスSR",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "4356"
+   },
+   {
+    "lat": 34.731306,
+    "lon": 135.496446,
+    "name": "K-34.オクトレーベン新大阪",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "5034"
+   },
+   {
+    "lat": 34.668054,
+    "lon": 135.495506,
+    "name": "E-72.湊町リバープレイス1",
+    "capacity": 8,
+    "region_id": "2",
+    "station_id": "5720"
+   },
+   {
+    "lat": 34.66017,
+    "lon": 135.49807,
+    "name": "E-61.エステムコート難波ミューステージ",
+    "capacity": 2,
+    "region_id": "2",
+    "station_id": "4359"
+   },
+   {
+    "lat": 34.709096,
+    "lon": 135.490989,
+    "name": "A-76.ドルチェヴィータ新梅田",
+    "capacity": 2,
+    "region_id": "2",
+    "station_id": "3133"
+   },
+   {
+    "lat": 34.66207,
+    "lon": 135.50394,
+    "name": "E-57.エステムコート難波センチュリオ",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "3979"
+   },
+   {
+    "lat": 34.679107,
+    "lon": 135.525148,
+    "name": "B-96.コーシャハイツ法円坂",
+    "capacity": 7,
+    "region_id": "2",
+    "station_id": "4375"
+   },
+   {
+    "lat": 34.698832,
+    "lon": 135.508058,
+    "name": "A-47.SNビル",
+    "capacity": 3,
+    "region_id": "2",
+    "station_id": "1507"
+   },
+   {
+    "lat": 34.705916,
+    "lon": 135.50253,
+    "name": "A-93.末廣荘",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "4591"
+   },
+   {
+    "lat": 34.668033,
+    "lon": 135.495186,
+    "name": "E-73.湊町リバープレイス2",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "5721"
+   },
+   {
+    "lat": 34.663092,
+    "lon": 135.499823,
+    "name": "E-68.レック難波ビル",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "4589"
+   },
+   {
+    "lat": 34.705682,
+    "lon": 135.489273,
+    "name": "A-03.新梅田シティ",
+    "capacity": 5,
+    "region_id": "1",
+    "station_id": "7831"
+   },
+   {
+    "lat": 34.690028,
+    "lon": 135.498929,
+    "name": "B-22.三交イン大阪淀屋橋",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "7864"
+   },
+   {
+    "lat": 34.730827,
+    "lon": 135.503068,
+    "name": "V-03.エステムコート新大阪8レヴォリス",
+    "capacity": 12,
+    "region_id": "2",
+    "station_id": "2180"
+   },
+   {
+    "lat": 34.664664,
+    "lon": 135.499353,
+    "name": "E-42.Osaka Metroなんばビル",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "3021"
+   },
+   {
+    "lat": 34.695544,
+    "lon": 135.528954,
+    "name": "G-15.ファミリーマート京橋駅西店",
+    "capacity": 11,
+    "region_id": "2",
+    "station_id": "113"
+   },
+   {
+    "lat": 34.651158,
+    "lon": 135.505278,
+    "name": "E-03.KOKO HOTELS",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "7830"
+   },
+   {
+    "lat": 34.687507,
+    "lon": 135.498208,
+    "name": "B-15.ユーレジデンス淀屋橋",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "7851"
+   },
+   {
+    "lat": 34.701777,
+    "lon": 135.491255,
+    "name": "A-87.グラングリーン大阪 南館",
+    "capacity": 17,
+    "region_id": "2",
+    "station_id": "4073"
+   },
+   {
+    "lat": 34.705222,
+    "lon": 135.502424,
+    "name": "A-69.中崎西2丁目43番3",
+    "capacity": 6,
+    "region_id": "1",
+    "station_id": "2530"
+   },
+   {
+    "lat": 34.693929,
+    "lon": 135.502826,
+    "name": "A-91.大阪市役所",
+    "capacity": 1,
+    "region_id": "1",
+    "station_id": "4408"
+   },
+   {
+    "lat": 34.697434,
+    "lon": 135.491741,
+    "name": "A-40.西梅田公園",
+    "capacity": 5,
+    "region_id": "1",
+    "station_id": "517"
+   },
+   {
+    "lat": 34.695522,
+    "lon": 135.494533,
+    "name": "A-79.一般社団法人中央電気倶楽部",
+    "capacity": 25,
+    "region_id": "2",
+    "station_id": "4962"
+   },
+   {
+    "lat": 34.658727,
+    "lon": 135.502993,
+    "name": "E-12.クリスタルグランツ難波",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "4963"
+   },
+   {
+    "lat": 34.66115,
+    "lon": 135.497665,
+    "name": "E-32.WELL STAY難波",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "987"
+   },
+   {
+    "lat": 34.65078,
+    "lon": 135.50712,
+    "name": "F-14.天王寺動物園駐輪場",
+    "capacity": 10,
+    "region_id": "1",
+    "station_id": "1470"
+   },
+   {
+    "lat": 34.673749,
+    "lon": 135.501223,
+    "name": "B-03.心斎橋PARCO",
+    "capacity": 4,
+    "region_id": "1",
+    "station_id": "7809"
+   },
+   {
+    "lat": 34.686523,
+    "lon": 135.499951,
+    "name": "B-102.アーバンネット御堂筋ビル",
+    "capacity": 3,
+    "region_id": "2",
+    "station_id": "5323"
+   },
+   {
+    "lat": 34.694744,
+    "lon": 135.543595,
+    "name": "L-30.鴫野西3丁目3番43",
+    "capacity": 5,
+    "region_id": "1",
+    "station_id": "5778"
+   },
+   {
+    "lat": 34.669661,
+    "lon": 135.498854,
+    "name": "B-104.リパーク西心斎橋2丁目第3",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "6050"
+   },
+   {
+    "lat": 34.736485,
+    "lon": 135.495255,
+    "name": "K-31.J.NODE 新大阪Ⅱ",
+    "capacity": 3,
+    "region_id": "1",
+    "station_id": "4386"
+   },
+   {
+    "lat": 34.657909,
+    "lon": 135.499554,
+    "name": "E-71.レシオスなんばVOGUE",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "5243"
+   },
+   {
+    "lat": 34.692239,
+    "lon": 135.523363,
+    "name": "G-33.ラ・フォルム天満橋イースト",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "5181"
+   },
+   {
+    "lat": 34.662654,
+    "lon": 135.49703,
+    "name": "E-19.浪速区元町2（地下鉄なんば駅）",
+    "capacity": 26,
+    "region_id": "2",
+    "station_id": "7931"
+   },
+   {
+    "lat": 34.668579,
+    "lon": 135.511389,
+    "name": "B-103.ローソン瓦屋町三丁目店",
+    "capacity": 2,
+    "region_id": "2",
+    "station_id": "5990"
+   },
+   {
+    "lat": 34.702129,
+    "lon": 135.489386,
+    "name": "C-18.24/7Workout梅田店",
+    "capacity": 4,
+    "region_id": "1",
+    "station_id": "1345"
+   },
+   {
+    "lat": 34.661861,
+    "lon": 135.433226,
+    "name": "J-34.リーベルホテル大阪",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "5864"
+   },
+   {
+    "lat": 34.706966,
+    "lon": 135.502408,
+    "name": "A-13.ファミリーマートK2梅田東店",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "7881"
+   },
+   {
+    "lat": 34.700849,
+    "lon": 135.506718,
+    "name": "A-56.梅田パークビル",
+    "capacity": 2,
+    "region_id": "1",
+    "station_id": "1843"
+   },
+   {
+    "lat": 34.670472,
+    "lon": 135.495725,
+    "name": "D-26.ローソン南堀江一丁目店",
+    "capacity": 12,
+    "region_id": "2",
+    "station_id": "787"
+   },
+   {
+    "lat": 34.74089,
+    "lon": 135.50563,
+    "name": "V-02.エステムコート新大阪15フロウ",
+    "capacity": 18,
+    "region_id": "2",
+    "station_id": "1808"
+   },
+   {
+    "lat": 34.701705,
+    "lon": 135.489235,
+    "name": "C-05.新梅田研修センター",
+    "capacity": 0,
+    "region_id": "2",
+    "station_id": "7902"
+   },
+   {
+    "lat": 34.702425,
+    "lon": 135.503462,
+    "name": "A-07.日本生命梅田ビル",
+    "capacity": 6,
+    "region_id": "2",
+    "station_id": "7863"
+   },
+   {
+    "lat": 34.695202,
+    "lon": 135.498814,
+    "name": "A-41.堂島公園",
+    "capacity": 1,
+    "region_id": "1",
+    "station_id": "518"
+   },
+   {
+    "lat": 34.691293,
+    "lon": 135.50623,
+    "name": "B-23.北浜中央ビル",
+    "capacity": 4,
+    "region_id": "1",
+    "station_id": "1303"
+   },
+   {
+    "lat": 34.642244,
+    "lon": 135.5138,
+    "name": "Q-13.阿倍野筋ハイツ",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "3327"
+   },
+   {
+    "lat": 34.738691,
+    "lon": 135.50575,
+    "name": "V-04.One Park東淀川駅前",
+    "capacity": 12,
+    "region_id": "2",
+    "station_id": "2168"
+   },
+   {
+    "lat": 34.642694,
+    "lon": 135.504497,
+    "name": "I-18.ホテルセレーノ山王",
+    "capacity": 14,
+    "region_id": "1",
+    "station_id": "1448"
+   },
+   {
+    "lat": 34.666473,
+    "lon": 135.508359,
+    "name": "B-39.サンコーポユウ日本橋",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "7964"
+   },
+   {
+    "lat": 34.661542,
+    "lon": 135.497565,
+    "name": "E-09.東横INN大阪なんば西",
+    "capacity": 0,
+    "region_id": "2",
+    "station_id": "227"
+   },
+   {
+    "lat": 34.697048,
+    "lon": 135.535161,
+    "name": "G-07.TAKETO STAY OSAKAJO",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "7785"
+   },
+   {
+    "lat": 34.710803,
+    "lon": 135.492927,
+    "name": "A-09.北スポーツセンター",
+    "capacity": 4,
+    "region_id": "1",
+    "station_id": "908"
+   },
+   {
+    "lat": 34.652541,
+    "lon": 135.506541,
+    "name": "E-13.通天閣",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "719"
+   },
+   {
+    "lat": 34.66234,
+    "lon": 135.504124,
+    "name": "E-25.タイムズ大阪難波",
+    "capacity": 19,
+    "region_id": "1",
+    "station_id": "1820"
+   },
+   {
+    "lat": 34.694921,
+    "lon": 135.483971,
+    "name": "【バッテリー交換のみ】ドコモショップ福島店",
+    "capacity": 0,
+    "region_id": "2",
+    "station_id": "1266"
+   },
+   {
+    "lat": 34.694349,
+    "lon": 135.525863,
+    "name": "G-06.コーナン片町店",
+    "capacity": 8,
+    "region_id": "2",
+    "station_id": "7924"
+   },
+   {
+    "lat": 34.666308,
+    "lon": 135.500001,
+    "name": "【バッテリー交換のみ】ドコモショップなんば御堂筋店",
+    "capacity": 0,
+    "region_id": "2",
+    "station_id": "1269"
+   },
+   {
+    "lat": 34.69802,
+    "lon": 135.52536,
+    "name": "G-27.エスリード京橋アミュゼ",
+    "capacity": 2,
+    "region_id": "2",
+    "station_id": "3070"
+   },
+   {
+    "lat": 34.707725,
+    "lon": 135.489549,
+    "name": "A-10.大阪ふくちぁん餃子大淀店",
+    "capacity": 11,
+    "region_id": "2",
+    "station_id": "658"
+   },
+   {
+    "lat": 34.66852,
+    "lon": 135.491187,
+    "name": "E-28.ミライト・ワン",
+    "capacity": 0,
+    "region_id": "2",
+    "station_id": "786"
+   },
+   {
+    "lat": 34.667138,
+    "lon": 135.495263,
+    "name": "E-35.OCAT駐輪場",
+    "capacity": 15,
+    "region_id": "1",
+    "station_id": "195"
+   },
+   {
+    "lat": 34.70172,
+    "lon": 135.48981,
+    "name": "C-24.エスリード大阪STATION",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "3339"
+   },
+   {
+    "lat": 34.704057,
+    "lon": 135.505319,
+    "name": "A-36.ファミリーマート中崎南店",
+    "capacity": 1,
+    "region_id": "2",
+    "station_id": "116"
+   },
+   {
+    "lat": 34.64815,
+    "lon": 135.515787,
+    "name": "F-02.ニッセイ天王寺ビル",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "7859"
+   },
+   {
+    "lat": 34.73807,
+    "lon": 135.50136,
+    "name": "K-04.スカイライト新大阪",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "1849"
+   },
+   {
+    "lat": 34.683505,
+    "lon": 135.519392,
+    "name": "B-61.大手前合同庁舎",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "1352"
+   },
+   {
+    "lat": 34.668586,
+    "lon": 135.508349,
+    "name": "B-29.ローソン道頓堀一丁目店",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "986"
+   },
+   {
+    "lat": 34.696638,
+    "lon": 135.539871,
+    "name": "L-04.ローソン新喜多一丁目店",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "7959"
+   },
+   {
+    "lat": 34.703293,
+    "lon": 135.527588,
+    "name": "G-09.都島南通1-187",
+    "capacity": 12,
+    "region_id": "2",
+    "station_id": "1218"
+   },
+   {
+    "lat": 34.659903,
+    "lon": 135.506752,
+    "name": "E-31.プランドール難波",
+    "capacity": 8,
+    "region_id": "2",
+    "station_id": "7735"
+   },
+   {
+    "lat": 34.690983,
+    "lon": 135.520812,
+    "name": "B-28.OMM東駐車場",
+    "capacity": 3,
+    "region_id": "1",
+    "station_id": "1842"
+   },
+   {
+    "lat": 34.6917,
+    "lon": 135.529281,
+    "name": "B-36.城見変電所",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "1196"
+   },
+   {
+    "lat": 34.668021,
+    "lon": 135.508295,
+    "name": "B-17.クリプトメリア日本橋",
+    "capacity": 3,
+    "region_id": "2",
+    "station_id": "128"
+   },
+   {
+    "lat": 34.7286,
+    "lon": 135.50574,
+    "name": "V-06.エステムコート新大阪9グランブライト1",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "3155"
+   },
+   {
+    "lat": 34.689793,
+    "lon": 135.498848,
+    "name": "B-34.北ビル",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "1094"
+   },
+   {
+    "lat": 34.697495,
+    "lon": 135.506967,
+    "name": "A-33.ハイデンス梅ヶ枝",
+    "capacity": 8,
+    "region_id": "2",
+    "station_id": "7894"
+   },
+   {
+    "lat": 34.733205,
+    "lon": 135.503714,
+    "name": "V-05.新大阪丸ビル別館",
+    "capacity": 5,
+    "region_id": "1",
+    "station_id": "2929"
+   },
+   {
+    "lat": 34.697414,
+    "lon": 135.531778,
+    "name": "G-30.MFK京橋駅前ビル",
+    "capacity": 7,
+    "region_id": "1",
+    "station_id": "3151"
+   },
+   {
+    "lat": 34.648357,
+    "lon": 135.515994,
+    "name": "F-04.あべの橋（操車場前）バス停",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "7929"
+   },
+   {
+    "lat": 34.664276,
+    "lon": 135.506183,
+    "name": "B-72.GSパーク日本橋第2",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "1775"
+   },
+   {
+    "lat": 34.651996,
+    "lon": 135.514281,
+    "name": "F-08.シーンズ天王寺フロントマークス",
+    "capacity": 7,
+    "region_id": "2",
+    "station_id": "2317"
+   },
+   {
+    "lat": 34.699643,
+    "lon": 135.497475,
+    "name": "A-22.梅田DTタワー",
+    "capacity": 20,
+    "region_id": "2",
+    "station_id": "7941"
+   },
+   {
+    "lat": 34.661507,
+    "lon": 135.505647,
+    "name": "E-39.エステムコート難波2アレグリア",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "2260"
+   },
+   {
+    "lat": 34.691038,
+    "lon": 135.49418,
+    "name": "D-05.NTT西日本土佐堀ビル",
+    "capacity": 3,
+    "region_id": "1",
+    "station_id": "7841"
+   },
+   {
+    "lat": 34.658086,
+    "lon": 135.502368,
+    "name": "E-07.南海難波高架下駐輪場Ａ",
+    "capacity": 0,
+    "region_id": "2",
+    "station_id": "7872"
+   },
+   {
+    "lat": 34.707407,
+    "lon": 135.497346,
+    "name": "A-24.D.D.HOUSE",
+    "capacity": 8,
+    "region_id": "2",
+    "station_id": "7946"
+   },
+   {
+    "lat": 34.705713,
+    "lon": 135.491472,
+    "name": "A-50.セブン-イレブン梅田スカイビル東店",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "1689"
+   },
+   {
+    "lat": 34.654529,
+    "lon": 135.437931,
+    "name": "O-03.天保山大型駐車場",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "7780"
+   },
+   {
+    "lat": 34.65922,
+    "lon": 135.50314,
+    "name": "E-20.レオンコンフォート難波サウスゲート",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "7779"
+   },
+   {
+    "lat": 34.669713,
+    "lon": 135.500662,
+    "name": "B-58.クロスホテル大阪",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "927"
+   },
+   {
+    "lat": 34.726586,
+    "lon": 135.494544,
+    "name": "K-14.ロカンダ新大阪",
+    "capacity": 6,
+    "region_id": "2",
+    "station_id": "2685"
+   },
+   {
+    "lat": 34.698195,
+    "lon": 135.529341,
+    "name": "G-02.ニッセイ京橋ビル",
+    "capacity": 12,
+    "region_id": "2",
+    "station_id": "7862"
+   },
+   {
+    "lat": 34.691444,
+    "lon": 135.497843,
+    "name": "B-04.住友ビルディング第３号館",
+    "capacity": 18,
+    "region_id": "1",
+    "station_id": "7813"
+   },
+   {
+    "lat": 34.709782,
+    "lon": 135.490309,
+    "name": "A-71.中津車庫",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "2753"
+   },
+   {
+    "lat": 34.664106,
+    "lon": 135.494375,
+    "name": "E-33.キャビン＆カプセルホテル J-SHIP大阪難波",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "7745"
+   },
+   {
+    "lat": 34.687965,
+    "lon": 135.505666,
+    "name": "B-50.NMR北浜",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "7966"
+   },
+   {
+    "lat": 34.686148,
+    "lon": 135.502343,
+    "name": "B-64.KCビル",
+    "capacity": 3,
+    "region_id": "2",
+    "station_id": "1509"
+   },
+   {
+    "lat": 34.705394,
+    "lon": 135.505546,
+    "name": "A-46.クリスタルグランツ梅田",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "1506"
+   },
+   {
+    "lat": 34.693916,
+    "lon": 135.509141,
+    "name": "A-55.新中之島ビル駐輪場",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "1799"
+   },
+   {
+    "lat": 34.705182,
+    "lon": 135.500262,
+    "name": "A-52.サイカパーク梅田東",
+    "capacity": 3,
+    "region_id": "1",
+    "station_id": "1713"
+   },
+   {
+    "lat": 34.670643,
+    "lon": 135.497483,
+    "name": "B-87.レバンガ心斎橋ビル",
+    "capacity": 6,
+    "region_id": "2",
+    "station_id": "3492"
+   },
+   {
+    "lat": 34.706471,
+    "lon": 135.491397,
+    "name": "A-17.クレイドル梅田",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "1660"
+   },
+   {
+    "lat": 34.689131,
+    "lon": 135.505497,
+    "name": "B-12.ファミリーマート伏見町二丁目店",
+    "capacity": 11,
+    "region_id": "2",
+    "station_id": "7839"
+   },
+   {
+    "lat": 34.698411,
+    "lon": 135.524554,
+    "name": "G-08.ローソン都島中野町一丁目店",
+    "capacity": 6,
+    "region_id": "2",
+    "station_id": "7960"
+   },
+   {
+    "lat": 34.644502,
+    "lon": 135.519797,
+    "name": "Q-01.コーナン天王寺店",
+    "capacity": 16,
+    "region_id": "2",
+    "station_id": "7922"
+   },
+   {
+    "lat": 34.702842,
+    "lon": 135.49422,
+    "name": "A-28.大阪駅",
+    "capacity": 8,
+    "region_id": "2",
+    "station_id": "1217"
+   },
+   {
+    "lat": 34.697958,
+    "lon": 135.494273,
+    "name": "A-70.AXビルディング",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "2811"
+   },
+   {
+    "lat": 34.707713,
+    "lon": 135.49835,
+    "name": "A-32.アーバンテラス茶屋町",
+    "capacity": 9,
+    "region_id": "1",
+    "station_id": "7727"
+   },
+   {
+    "lat": 34.705475,
+    "lon": 135.504039,
+    "name": "A-04.イビスバジェット大阪梅田",
+    "capacity": 6,
+    "region_id": "2",
+    "station_id": "7828"
+   },
+   {
+    "lat": 34.73628,
+    "lon": 135.49996,
+    "name": "K-02.クリスタルグランツ新大阪",
+    "capacity": 12,
+    "region_id": "2",
+    "station_id": "1807"
+   },
+   {
+    "lat": 34.687074,
+    "lon": 135.505204,
+    "name": "B-46.UR 船場淡路町",
+    "capacity": 6,
+    "region_id": "1",
+    "station_id": "7770"
+   },
+   {
+    "lat": 34.710384,
+    "lon": 135.49789,
+    "name": "A-08.NTT西日本豊崎ビル",
+    "capacity": 5,
+    "region_id": "1",
+    "station_id": "7868"
+   },
+   {
+    "lat": 34.689073,
+    "lon": 135.498288,
+    "name": "B-26.GSパーク銀泉本社前駐車場",
+    "capacity": 11,
+    "region_id": "2",
+    "station_id": "7895"
+   },
+   {
+    "lat": 34.669815,
+    "lon": 135.498586,
+    "name": "B-16.グランドサウナ心斎橋",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "543"
+   },
+   {
+    "lat": 34.700345,
+    "lon": 135.526614,
+    "name": "G-19.たから荘",
+    "capacity": 8,
+    "region_id": "2",
+    "station_id": "1318"
+   },
+   {
+    "lat": 34.73777,
+    "lon": 135.50156,
+    "name": "K-03.宮原一丁目16番42",
+    "capacity": 8,
+    "region_id": "2",
+    "station_id": "1850"
+   },
+   {
+    "lat": 34.645049,
+    "lon": 135.518819,
+    "name": "Q-02.阿倍野区松崎町1（地下鉄天王寺駅）",
+    "capacity": 10,
+    "region_id": "2",
+    "station_id": "7857"
+   },
+   {
+    "lat": 34.695109,
+    "lon": 135.49217,
+    "name": "A-80.NTTデータ堂島ビル",
+    "capacity": 13,
+    "region_id": "2",
+    "station_id": "3519"
+   },
+   {
+    "lat": 34.662615,
+    "lon": 135.509674,
+    "name": "B-54.ファミリーマート日本橋二丁目東店",
+    "capacity": 3,
+    "region_id": "2",
+    "station_id": "7990"
+   },
+   {
+    "lat": 34.726589,
+    "lon": 135.493905,
+    "name": "K-12.昭光寺",
+    "capacity": 3,
+    "region_id": "2",
+    "station_id": "2593"
+   },
+   {
+    "lat": 34.739313,
+    "lon": 135.492585,
+    "name": "K-11.熊木モータープール",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "2537"
+   },
+   {
+    "lat": 34.72832,
+    "lon": 135.49456,
+    "name": "K-27.エステムコート新大阪5ソレックス",
+    "capacity": 7,
+    "region_id": "2",
+    "station_id": "3440"
+   },
+   {
+    "lat": 34.66619,
+    "lon": 135.4905,
+    "name": "E-47.エステムプラザ難波WEST2プレディア",
+    "capacity": 13,
+    "region_id": "2",
+    "station_id": "3053"
+   },
+   {
+    "lat": 34.651402,
+    "lon": 135.509859,
+    "name": "F-13.天王寺動物園事務所来客用駐車場",
+    "capacity": 10,
+    "region_id": "1",
+    "station_id": "1469"
+   },
+   {
+    "lat": 34.680877,
+    "lon": 135.529576,
+    "name": "B-60.もりのみやキューズモールBASE",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "1319"
+   },
+   {
+    "lat": 34.68755,
+    "lon": 135.508662,
+    "name": "B-32.ルミノール北浜セレニテ",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "7958"
+   },
+   {
+    "lat": 34.734621,
+    "lon": 135.502587,
+    "name": "K-07.JR新大阪駅東口",
+    "capacity": 4,
+    "region_id": "1",
+    "station_id": "2184"
+   },
+   {
+    "lat": 34.645998,
+    "lon": 135.507289,
+    "name": "I-25.天王寺山王駐輪場",
+    "capacity": 7,
+    "region_id": "2",
+    "station_id": "3438"
+   },
+   {
+    "lat": 34.700004,
+    "lon": 135.53167,
+    "name": "G-03.ファミリーマート東野田四丁目店",
+    "capacity": 9,
+    "region_id": "2",
+    "station_id": "7898"
+   },
+   {
+    "lat": 34.733203,
+    "lon": 135.48994,
+    "name": "K-10.ホリデイ・イン&スイーツ新大阪",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "2433"
+   },
+   {
+    "lat": 34.690791,
+    "lon": 135.507664,
+    "name": "B-05.EM北浜ビル",
+    "capacity": 12,
+    "region_id": "2",
+    "station_id": "926"
+   },
+   {
+    "lat": 34.66045,
+    "lon": 135.50637,
+    "name": "E-44.エステムコート難波3ラグース",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "3057"
+   },
+   {
+    "lat": 34.726016,
+    "lon": 135.50304,
+    "name": "K-16.西中島3丁目364番2",
+    "capacity": 8,
+    "region_id": "1",
+    "station_id": "2836"
+   },
+   {
+    "lat": 34.662739,
+    "lon": 135.499107,
+    "name": "E-29.エディオンアリーナ大阪",
+    "capacity": 11,
+    "region_id": "2",
+    "station_id": "1661"
+   },
+   {
+    "lat": 34.72866,
+    "lon": 135.50559,
+    "name": "V-07.エステムコート新大阪9グランブライト2",
+    "capacity": 3,
+    "region_id": "2",
+    "station_id": "3156"
+   },
+   {
+    "lat": 34.69794,
+    "lon": 135.52559,
+    "name": "G-31.エスリード京橋WEST",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "3497"
+   },
+   {
+    "lat": 34.691803,
+    "lon": 135.59,
+    "name": "Z-03.フレスポ東大阪",
+    "capacity": 17,
+    "region_id": "1",
+    "station_id": "7810"
+   },
+   {
+    "lat": 34.686764,
+    "lon": 135.503327,
+    "name": "B-86.ステラ淀屋橋ビル",
+    "capacity": 3,
+    "region_id": "2",
+    "station_id": "3520"
+   },
+   {
+    "lat": 34.665192,
+    "lon": 135.498271,
+    "name": "E-18.地下鉄なんば駅31番出口",
+    "capacity": 7,
+    "region_id": "2",
+    "station_id": "7930"
+   },
+   {
+    "lat": 34.698414,
+    "lon": 135.489506,
+    "name": "C-13.アパホテル大阪梅田",
+    "capacity": 4,
+    "region_id": "1",
+    "station_id": "267"
+   },
+   {
+    "lat": 34.706332,
+    "lon": 135.487728,
+    "name": "A-37.東通ビル",
+    "capacity": 3,
+    "region_id": "1",
+    "station_id": "486"
+   },
+   {
+    "lat": 34.672815,
+    "lon": 135.498492,
+    "name": "B-02.アメリカ村",
+    "capacity": 3,
+    "region_id": "1",
+    "station_id": "7806"
+   },
+   {
+    "lat": 34.687945,
+    "lon": 135.499652,
+    "name": "B-01.大阪ガス",
+    "capacity": 17,
+    "region_id": "1",
+    "station_id": "7802"
+   },
+   {
+    "lat": 34.618093,
+    "lon": 135.453205,
+    "name": "T-27.関西総合物流センター",
+    "capacity": 4,
+    "region_id": "2",
+    "station_id": "7359"
+   },
+   {
+    "lat": 34.699376,
+    "lon": 135.524519,
+    "name": "G-38.桜ノ宮グランドパークハイツ",
+    "capacity": 0,
+    "region_id": "2",
+    "station_id": "7514"
+   },
+   {
+    "lat": 34.647177,
+    "lon": 135.522751,
+    "name": "Q-22.JR寺田町駅",
+    "capacity": 4,
+    "region_id": "1",
+    "station_id": "7588"
+   },
+   {
+    "lat": 34.681984,
+    "lon": 135.525708,
+    "name": "B-106.NTT西日本株式会社 馬場町ビル",
+    "capacity": 24,
+    "region_id": "2",
+    "station_id": "7605"
+   },
+   {
+    "lat": 34.671446,
+    "lon": 135.498148,
+    "name": "B-107.ローソン西心斎橋二丁目店",
+    "capacity": 2,
+    "region_id": "2",
+    "station_id": "7659"
+   },
+   {
+    "lat": 34.694662,
+    "lon": 135.511913,
+    "name": "A-98.リパーク天神橋１丁目第２",
+    "capacity": 5,
+    "region_id": "2",
+    "station_id": "7668"
+   }
+  ]
+ },
+ "version": "2.3",
+ "last_updated": 1795597594
+}
