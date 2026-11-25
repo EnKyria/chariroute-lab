@@ -34,6 +34,16 @@ jobs:
       - name: Install backend dependencies
         run: python -m pip install -r backend/requirements-dev.txt
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: frontend/.nvmrc # Node 22 系の最新（Vite 8 などは 22.12 以上が必要）
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
       - name: Run quality gate
         env:
           CHECK_PYTHON: python # venv を作らず、setup-python の 3.12 を使う

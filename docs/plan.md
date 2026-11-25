@@ -76,7 +76,7 @@
 | 1 | 開発基盤・ハーネス構築 | venv、requirements、特性テスト、Git、CLAUDE.md / rules / settings / Stop Hook / agents、**reviewer による最終レビュー後に初回コミット** | `scripts/check.py` が成功し、初回コミット済み |
 | 2 | GitHub・CI 構築 | GitHub リポジトリの作成と push、GitHub Actions で `scripts/check.py` を実行、ブランチ運用の開始 | PR で CI が緑になる |
 | 3 | バックエンド実装 | GBFS の取得・キャッシュ、大阪市内のポート抽出、失敗時に 503、経路計算（組み合わせの評価）、プリセット API | フィクスチャを使ったテストと、代表的な地点ペアのテストが成功 |
-| 4 | フロントエンド実装 | React / TS / Vite で 1 画面、3 状態（ローディング・エラー・0 件）の表示、クレジット表示 | lint / typecheck / test が成功 |
+| 4 | フロントエンド実装 | React / TS / Vite で 1 画面、地図（Leaflet + OSM）、画面状態（初期・読み込み中・成功・経路なし・入力エラー・通信障害・503）の表示、クレジット表示 | lint / typecheck / test / build が成功 |
 | 5 | ローカル結合確認 | uvicorn と Vite dev server で、実際の GBFS を使ってエンドツーエンドで確認。Mangum 経由のテスト | ローカルで検索が成功し、GBFS の取得失敗時に 503 が画面に表示される |
 | 6 | AWS デプロイ | AWS CLI の導入と認証設定、既存リソースの読み取り専用の棚卸し、Lambda ビルドスクリプト（manylinux/cp312）、HTTP API、S3 + CloudFront、CloudWatch | 公開 URL で検索でき、CloudWatch でログを確認できる |
 | 7 | 総合評価・技術知見の整理 | 評価シナリオでの総合テスト、`docs/engineering-notes.md` の整理、面接向けの説明の準備 | 評価結果と知見が docs にまとまっている |

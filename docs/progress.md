@@ -4,16 +4,16 @@
 会話履歴にしか残っていない重要な情報は、ここか `docs/plan.md` / `docs/engineering-notes.md` に書き移す。
 フェーズ番号の定義は `docs/plan.md` §5 を参照。
 
-最終更新：2026-11-25（セッション 3 の終了時：PHASE 3 完了）
+最終更新：2026-11-25（セッション 4：PHASE 4 完了、PHASE 4.5 の計画中）
 
 ## 現在のフェーズ
-**PHASE 3：バックエンド実装** — 完了（PR #3 `feature/route-search` の squash マージをもって完了）。
-→ 次は **PHASE 4：フロントエンド実装**（新しいセッションで着手する。開始条件は「次にやること」を参照）
+**PHASE 4：フロントエンド実装** — 完了（PR `feature/frontend` の squash マージをもって完了。直線距離モデルのベースラインとして保存）。
+→ 次は **PHASE 4.5：現在地・地点検索・道路に沿った経路**（ユーザー受入テストで発生した追加要件。計画を立ててユーザーに報告してから実装する）
 
 ## 現在のブランチと Git の状態
 - リモート：`origin` = https://github.com/EnKyria/chariroute-lab（**public**）
 - `main`：`dfffd2c`（PHASE 1）→ `89848ed`（PR #1、CI）→ `011db28`（PR #2、PHASE 2 の引き継ぎ）→ PR #3（PHASE 3、経路検索 API）の squash コミット
-- 作業ブランチ `feature/route-search` は、マージ後にリモートとローカルの両方から削除する（中身の一致を確認してから）
+- 作業ブランチ：`feature/frontend`（`main` の `cde6e33` から作成）→ PR で squash マージし、削除する。`feature/route-search` は削除済み
 - `main` は ruleset `protect-main`（ID 28061644）で保護している。**直接 push はできない**ので、変更は必ず `feature/<名前>` ブランチ → PR → CI（`check`）が緑 → squash マージ、の順で行う
 - マージ済みのブランチは、リモートとローカルの両方から削除する。squash マージ後は `git branch -d` が使えないため、`git diff --quiet main <branch>` で中身が同じことを確かめてから `-D` で削除する
 - コミットの作者：ローカル設定の `EnKyria <36327617+EnKyria@users.noreply.github.com>`
@@ -50,6 +50,13 @@
 - 引き継ぎ専用の PR は作らない（progress.md の更新は PR #3 に含める）
 - PHASE 4 は新しいセッションで着手する
 
+### 2026-11-25（セッション 4）
+- PHASE 4 の技術スタック：React / TypeScript / Vite / Leaflet・React Leaflet / OpenStreetMap / Vitest / React Testing Library / ESLint。必要最小限の npm 依存の追加は承認済み
+- **Node.js を 22 系の最新（22.23.5）に更新**（22.11.0 では Vite 8 などが動かないため。古い系統に固定する案は不採用）。更新は Claude が winget で実行した
+- `package-lock.json` を Git 管理し、CI では `npm ci` を使う
+- 本番は CloudFront 経由の同一オリジン、ローカルは Vite の proxy
+- MVP 完成を優先し、ハーネスの追加改善はしない。PHASE 4 の完了時点で停止し、AWS の操作はまだ行わない
+
 ## 完了済みタスク
 ### PHASE 1（2026-11-25 完了）
 - [x] 既存リポジトリの調査、Python 3.12 の venv、requirements、特性テスト（9 件）
@@ -77,8 +84,18 @@
 - [x] reviewer（2 回目、分枝限定法の再レビュー）：**重大な指摘なし**。下限の正当性（三角不等式、速度は max で取るので速度の大小が入れ替わっても成立）、枝刈りによる取りこぼしなし、同値の扱い（`>` best + 1e-9 なので同値の組は刈らない）、テスト側の総当たりの独立性、候補がない場合の挙動を確認済み
 - [x] PR #3 の作成、CI（`check`）の成功、squash マージ
 
+### PHASE 4（2026-11-25 完了）
+- [x] Node.js とライブラリの互換性の確認 → Node.js 22.23.5 に更新、依存はバージョン固定（`frontend/package.json`）
+- [x] OpenAPI スキーマを出力して `src/api/types.ts` を作成（backend のモデルと一致することを reviewer も確認）
+- [x] API クライアント（エラーの種類の変換、応答の検証）、画面（プリセット選択・入れ替え・検索・比較・おすすめ・内訳・ポートと台数・地図・取得時刻と出典・注意書き）
+- [x] OSM タイルの利用条件の確認（`docs/engineering-notes.md` §8）
+- [x] UI テスト 22 件（fetch をスタブ化、外部ネットワークに接続しない）
+- [x] `scripts/check.py` に frontend の build を追加、CI に setup-node（`.nvmrc`）と `npm ci` を追加
+- [x] ローカル接続の確認：Vite dev server（proxy）→ 確認用ブリッジ（http.server → `main.handler`）→ 実 GBFS で、プリセットの取得、梅田→難波の検索（200、`bike_share` あり）、同じ地点（400）を確認。dev server が全モジュールを配信することも確認。ブラウザでの目視確認は Claude からはできなかった（Chrome 拡張に接続できなかった）が、**ユーザーがブラウザで画面を確認した**
+- [x] reviewer：must 0 件。should 4 件のうち 3 件を修正（応答の検証の強化、検索中の入力の無効化、プリセット 0 件のエラー）、1 件（地図の依存の追加理由）は engineering-notes に記録済み。nit の「差分の丸め」も修正
+
 ## 未完了タスク（以降のフェーズ）
-- [ ] **PHASE 4**：フロントエンド（React / TS / Vite）
+- [ ] **PHASE 4.5**：現在地・地点検索・道路に沿った経路（計画の報告 → ユーザーの承認 → 実装）
 - [ ] **PHASE 5**：ローカル結合確認
 - [ ] **PHASE 6**：AWS CLI の導入と認証設定、棚卸し、Lambda ビルド、HTTP API、S3 + CloudFront、CloudWatch
 - [ ] **PHASE 7**：総合評価・技術知見の整理
@@ -103,6 +120,13 @@
 - 既存の AWS 環境（Lambda の有無・ランタイム）が未確認 → PHASE 6
 - Stop Hook：セッション 2 で、状態ファイル `.claude/.cache/stop-hook-state.json` が `stop_hook.py` の修正後に更新されていたため、**動作していると推定**。`/hooks` での目視確認はまだ。サブエージェント（reviewer）は読み込まれ、動作を確認済み
 - Mangum 0.22 で DeprecationWarning が出る（動作には影響なし）
+- **PHASE 4 で見つかったこと**：
+  - **ユーザー受入テストで発生した追加要件**（→ PHASE 4.5）：直線の経路が川などを横断して実用的でない、現在地から検索したい、プリセット以外の地点を検索したい
+  - ローカルに ASGI サーバーがない（uvicorn は未導入）。PHASE 5 で導入するか判断する（依存の追加になるので承認が必要）
+  - 小文字のドライブ文字（`d:\`）から `npm test` を直接実行すると Vitest が失敗する（check.py 経由では起きない。engineering-notes §5）
+  - OSM の公式タイルは SLA がなく、予告なく遮断されうる。利用が増える場合はタイルの提供元を切り替える。CloudFront で Referrer-Policy を設定するときは Referer を消さない（PHASE 6）
+  - 大阪エリア判定の仮定があるため、画面に「公式アプリで確認」の注意書きを出している
+  - reviewer の nit（未対応）：502 / 504 も「HTTP 50x」のサーバーエラー扱い、`VITE_API_BASE_URL` の末尾スラッシュを正規化しない
 
 ## ブランチ保護の検証結果（2026-11-25）
 - **API で確認した事実**：`GET /repos/EnKyria/chariroute-lab/rules/branches/main` で、ruleset 28061644 の 4 つのルールが `main` に適用されている。
@@ -125,6 +149,9 @@
 - GitHub Actions を、メジャータグ（`actions/checkout@v5`、`actions/setup-python@v6`）ではなくコミット SHA に固定する（Dependabot での更新もあわせて検討する）
 
 ## 最新の品質チェック結果
+- 2026-11-25（セッション 4、`feature/frontend`）：`python scripts/check.py` → **ALL PASSED**
+  - ruff：All checks passed / pytest：427 件成功（警告 1 件：Mangum の DeprecationWarning）
+  - npm lint / typecheck：OK、vitest：22 件成功、vite build：OK（JS 約 386KB、gzip 約 118KB）
 - 2026-11-25（セッション 3、`feature/route-search`）：`python scripts/check.py` → **ALL PASSED**
   - ruff：All checks passed
   - pytest：427 件成功（警告 1 件：Mangum の DeprecationWarning）
@@ -135,18 +162,9 @@
   - CI と同じ `CHECK_PYTHON` の経路でも成功。Python が見つからない場合は exit 2 になることも確認
 - GitHub Actions：PR #1 でジョブ `check` が pass（ruff OK、pytest 9 件、`check.py: ALL PASSED`）
 
-## 次にやること（PHASE 4：フロントエンド実装、新しいセッション）
-### 開始条件（着手前に確認する）
-1. このファイルを読み、`git switch main && git pull --ff-only` と `git log --oneline -5` で、PR #3 の squash コミットが `main` にあることを確認する。`gh api user --jq .login` が `EnKyria` であることも確認する
-2. `python scripts/check.py` が `main` で ALL PASSED になる（backend の 427 件）
-3. `feature/route-search` が削除済みである（`git branch -a`）
-4. 依存の追加（Node.js のパッケージ：React、Vite、TypeScript、Vitest、Testing Library など）は、**ユーザーの承認を得てから**行う。Node.js と npm のバージョンも先に確認する
-
-### 作業内容
-- `feature/frontend` などのブランチで `frontend/` を作る（React + TS + Vite、`.claude/rules/frontend.md` に従う）
-- API の型は `src/api/` に 1 か所だけ定義し、backend の Pydantic モデル（`backend/main.py` の `PresetsResponse`、`RouteResponse` など）と同じフィールド名にする
-- 画面：プリセットの選択 → 検索 → 結果。`recommended`、`bike_share: null`（候補なし）、各区間の内訳、ローディング・エラー（400 / 422 / 503 / 通信失敗）の表示。503 は「ポート情報を取得できません」
-- `data.attribution` と `data.license_url` によるクレジット表示、`data.last_updated` の表示
-- 所要時間は概算（直線距離 × 迂回係数）であることを画面に明記する
-- CORS：ローカルの結合（PHASE 5）では Vite の proxy を使うか FastAPI に CORS を設定する（本番は HTTP API 側で設定する予定）
-- `package.json` の `lint` / `typecheck` / `test` を `scripts/check.py` が実行することを確認する
+## 次にやること
+1. **PHASE 4.5**：`feature/route-engine` などのブランチで、計画（`docs/plan.md`）に沿って実装する。APIキーの発行はユーザーが行う
+2. **PHASE 5：ローカル結合確認**
+   - ローカルの API サーバー：uvicorn を `requirements-dev.txt` に追加するか判断する（承認が必要）。追加しない場合は、http.server から `main.handler` に渡すブリッジ（engineering-notes §5）をスクリプト化する
+   - 起動：`(cd frontend && npm run dev)` で Vite（http://127.0.0.1:5173、`/api` は 127.0.0.1:8000 に転送）
+   - ブラウザで目視確認：スマートフォン幅、地図タイルと帰属表示、GBFS の取得失敗時（`GBFS_BASE_URL` を到達できない https の URL にする）に 503 の表示になること

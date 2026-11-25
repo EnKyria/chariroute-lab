@@ -1,0 +1,84 @@
+:root {
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #15803d;
+  --accent-weak: #dcfce7;
+  --walk: #475569;
+  --error: #b91c1c;
+  --error-weak: #fef2f2;
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+h1, h2, p { margin: 0; }
+h2 { font-size: 1rem; margin-bottom: 8px; }
+a { color: #1d4ed8; }
+small { color: var(--muted); font-size: 0.8rem; }
+
+.app { max-width: 640px; margin: 0 auto; padding: 0 16px 24px; }
+.app-header { padding: 20px 0 12px; }
+.app-header h1 { font-size: 1.6rem; color: var(--accent); letter-spacing: 0.02em; }
+.app-header p { color: var(--muted); font-size: 0.9rem; }
+main { display: flex; flex-direction: column; gap: 12px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.card.muted { color: var(--muted); }
+.result { display: flex; flex-direction: column; gap: 12px; }
+
+.search-form { display: flex; flex-direction: column; gap: 10px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-weight: 600; font-size: 0.9rem; }
+select, button { font: inherit; min-height: 48px; border-radius: 10px; }
+select { width: 100%; padding: 0 12px; border: 1px solid #cbd5e1; background: #fff; color: var(--text); }
+button { cursor: pointer; border: 1px solid #cbd5e1; background: #fff; color: var(--text); }
+button:disabled { cursor: not-allowed; opacity: 0.6; }
+.swap { align-self: center; min-height: 40px; padding: 0 16px; font-size: 0.9rem; }
+.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; margin-top: 4px; }
+
+.alert-error { background: var(--error-weak); border: 1px solid #fecaca; color: var(--error); border-radius: 10px; padding: 10px 12px; }
+.card.alert-error { padding: 16px; }
+.card.alert-error p + p { margin-top: 4px; }
+
+.recommend h2 { font-size: 1.3rem; margin: 2px 0 4px; }
+.recommend-bike_share { background: var(--accent-weak); border-color: #86efac; }
+.route-names { color: var(--muted); font-size: 0.9rem; }
+
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+.compare > div { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+.compare > div.best { border-color: var(--accent); border-width: 2px; }
+.compare dt { font-size: 0.85rem; color: var(--muted); }
+.compare dd { margin: 0; font-size: 1.3rem; font-weight: 700; }
+.compare dd small { display: block; font-weight: 400; }
+
+.breakdown { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.breakdown th, .breakdown td { padding: 8px 0; border-bottom: 1px solid var(--border); text-align: left; font-weight: 400; vertical-align: top; }
+.breakdown th small { display: block; }
+.breakdown td { text-align: right; white-space: nowrap; padding-left: 8px; }
+.breakdown tfoot th, .breakdown tfoot td { font-weight: 700; border-bottom: none; }
+
+.stations { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.stations li { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; align-items: center; }
+.station-name { font-weight: 600; }
+.count { grid-column: 2; color: var(--muted); font-size: 0.88rem; }
+.tag { font-size: 0.75rem; font-weight: 700; color: #fff; border-radius: 6px; padding: 2px 8px; }
+.tag-rent { background: #15803d; }
+.tag-return { background: #c2410c; }
+.note { color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
+
+.map { margin: 0; }
+.map-canvas { height: 320px; border-radius: 10px; }
+.legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 8px 0 0; padding: 0; font-size: 0.85rem; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+
+.data-source { font-size: 0.85rem; color: var(--muted); }
+.data-source p + p { margin-top: 4px; }
+.caution { font-size: 0.85rem; }
+.caution ul { margin: 0; padding-left: 1.2em; }

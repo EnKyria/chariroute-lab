@@ -41,7 +41,7 @@ Browser ─▶ CloudFront ─▶ S3（React / Vite のビルド成果物）
 
 ## リポジトリ構成
 - `backend/`：FastAPI アプリ（`main.py`）、テスト（`tests/`）、依存定義（`requirements*.txt`）
-- `frontend/`：React + TypeScript + Vite（未作成）
+- `frontend/`：React + TypeScript + Vite + Leaflet。`src/api/`（型と API クライアント）、`src/App.tsx`（画面）、`src/RouteMap.tsx`（地図）
 - `scripts/check.py`：品質ゲート。`scripts/stop_hook.py`：Claude Code の Stop Hook
 - `package/` と `deployment.zip`：旧手順で作った Lambda 成果物。Git 管理の対象外で、削除しない
 
@@ -49,7 +49,8 @@ Browser ─▶ CloudFront ─▶ S3（React / Vite のビルド成果物）
 ```bash
 py -3.12 -m venv backend/.venv            # Python 3.12 必須（Lambda ランタイムと合わせる）
 backend/.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt
-python scripts/check.py                    # lint と test の全件（push 前に必ず実行）
+(cd frontend && npm ci)                    # Node.js 22 系（22.22.2 以上）
+python scripts/check.py                    # lint / typecheck / test / build の全件（push 前に必ず実行）
 backend/.venv/Scripts/python.exe -m pytest backend/tests -k <name>   # 個別のテスト
 ```
 
