@@ -13,7 +13,14 @@ import {
   useMapEvents,
 } from 'react-leaflet'
 import type { BikeShareRoute } from './api/types'
-import { buildMapModel, POINT_LABEL, type MapPointKind } from './mapPoints'
+import {
+  buildMapModel,
+  LEGEND_ORDER,
+  LINE_STYLE,
+  MARKER_STYLE,
+  POINT_LABEL,
+  sortForDrawing,
+} from './mapPoints'
 import { OSAKA_CENTER, type SelectedPoint } from './points'
 
 // OSM のタイル利用規約：HTTPS のこの URL を使い、地図上に帰属表示を出す。URL は差し替え可能にしておく。
@@ -21,13 +28,6 @@ const TILE_URL: string =
   import.meta.env.VITE_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors'
-
-const COLOR: Record<MapPointKind, string> = {
-  origin: '#1d4ed8',
-  rent: '#15803d',
-  return: '#c2410c',
-  destination: '#b91c1c',
-}
 
 export type PickTarget = 'origin' | 'destination'
 
@@ -62,6 +62,7 @@ function FitBounds({ bounds }: { bounds: [number, number][] }) {
 
 export default function RouteMap({ origin, destination, bike, pickTarget, onPick }: Props) {
   const { points, lines, bounds } = buildMapModel(origin, destination, bike)
+  const drawn = sortForDrawing(points)
 
   return (
     <figure className="map">
@@ -78,19 +79,20 @@ export default function RouteMap({ origin, destination, bike, pickTarget, onPick
           <Polyline
             key={i}
             positions={l.positions}
-            pathOptions={{
-              color: l.mode === 'bike' ? '#15803d' : '#475569',
-              weight: l.mode === 'bike' ? 6 : 4,
-              opacity: 0.9,
-            }}
+            pathOptions={{ ...LINE_STYLE[l.mode], opacity: 0.9 }}
           />
         ))}
-        {points.map((p) => (
+        {drawn.map((p) => (
           <CircleMarker
             key={p.kind}
             center={[p.lat, p.lon]}
-            radius={9}
-            pathOptions={{ color: '#fff', weight: 2, fillColor: COLOR[p.kind], fillOpacity: 1 }}
+            radius={MARKER_STYLE[p.kind].radius}
+            pathOptions={{
+              color: MARKER_STYLE[p.kind].stroke,
+              weight: MARKER_STYLE[p.kind].weight,
+              fillColor: MARKER_STYLE[p.kind].fill,
+              fillOpacity: 1,
+            }}
           >
             <Tooltip>
               {p.label}：{p.name}
@@ -105,9 +107,16 @@ export default function RouteMap({ origin, destination, bike, pickTarget, onPick
           </p>
         )}
         <ul className="legend">
-          {(Object.keys(COLOR) as MapPointKind[]).map((k) => (
+          {LEGEND_ORDER.map((k) => (
             <li key={k}>
-              <span className="dot" style={{ background: COLOR[k] }} aria-hidden="true" />
+              <span
+                className="dot"
+                style={{
+                  background: MARKER_STYLE[k].fill,
+                  borderColor: MARKER_STYLE[k].stroke === '#ffffff' ? 'transparent' : MARKER_STYLE[k].stroke,
+                }}
+                aria-hidden="true"
+              />
               {POINT_LABEL[k]}
             </li>
           ))}

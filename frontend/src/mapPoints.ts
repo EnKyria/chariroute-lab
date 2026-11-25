@@ -32,6 +32,38 @@ export const POINT_LABEL: Record<MapPointKind, string> = {
   destination: '目的地',
 }
 
+export interface MarkerStyle {
+  fill: string
+  stroke: string
+  weight: number
+  radius: number
+}
+
+// 点の配色：出発地＝青、貸出＝緑、返却＝オレンジ、目的地＝赤（線は徒歩＝グレー、自転車＝緑）。
+// 返却（オレンジ）と目的地（赤）は色相が近いので、明度も大きく変える（明るいオレンジ / 濃い赤）。
+// 返却ポートには濃い茶色の太めの枠線を付け、地図のタイルや自転車の線からも浮かせる。
+export const MARKER_STYLE: Record<MapPointKind, MarkerStyle> = {
+  origin: { fill: '#1d4ed8', stroke: '#ffffff', weight: 2, radius: 11 },
+  rent: { fill: '#15803d', stroke: '#ffffff', weight: 2, radius: 8 },
+  return: { fill: '#fb923c', stroke: '#7c2d12', weight: 3, radius: 8 },
+  destination: { fill: '#b91c1c', stroke: '#ffffff', weight: 2, radius: 11 },
+}
+
+export const LINE_STYLE: Record<MapLine['mode'], { color: string; weight: number }> = {
+  walk: { color: '#475569', weight: 4 },
+  bike: { color: '#15803d', weight: 6 },
+}
+
+export const LEGEND_ORDER: MapPointKind[] = ['origin', 'rent', 'return', 'destination']
+
+// 描く順（後のものが上に重なる）。出発地・目的地を大きめの円で先に描き、ポートを上に重ねる。
+// 目的地のすぐ近くに返却ポートがあっても、「赤い輪の中のオレンジの点」として両方が見える。
+const DRAW_ORDER: Record<MapPointKind, number> = { origin: 0, destination: 1, rent: 2, return: 3 }
+
+export function sortForDrawing(points: MapPoint[]): MapPoint[] {
+  return [...points].sort((a, b) => DRAW_ORDER[a.kind] - DRAW_ORDER[b.kind])
+}
+
 export function buildMapModel(
   origin: SelectedPoint | null,
   destination: SelectedPoint | null,

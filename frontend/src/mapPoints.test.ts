@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildMapModel } from './mapPoints'
+import { buildMapModel, LEGEND_ORDER, LINE_STYLE, MARKER_STYLE, sortForDrawing } from './mapPoints'
 import type { SelectedPoint } from './points'
 import { bikeRoute } from './test/fixtures'
 
@@ -35,5 +35,31 @@ describe('buildMapModel', () => {
     const bike = bikeRoute.bike_share!
     const broken = { ...bike, legs: bike.legs.map((l) => ({ ...l, geometry: l.geometry.slice(0, 1) })) }
     expect(buildMapModel(origin, destination, broken).lines).toEqual([])
+  })
+})
+
+describe('地図の配色と重なり（返却ポートと目的地を区別する）', () => {
+  it('4 種類の点はすべて別の色で、配色の方針（青・緑・オレンジ・赤）に沿う', () => {
+    const fills = LEGEND_ORDER.map((k) => MARKER_STYLE[k].fill)
+    expect(new Set(fills).size).toBe(4)
+    expect(MARKER_STYLE.origin.fill).toBe('#1d4ed8')
+    expect(MARKER_STYLE.rent.fill).toBe(LINE_STYLE.bike.color) // 貸出ポートと自転車の線は同じ緑
+    expect(MARKER_STYLE.return.fill).toBe('#fb923c')
+    expect(MARKER_STYLE.destination.fill).toBe('#b91c1c')
+    expect(LINE_STYLE.walk.color).toBe('#475569')
+  })
+
+  it('返却ポートは目的地と枠線の色も変え、枠を太くする', () => {
+    expect(MARKER_STYLE.return.stroke).not.toBe(MARKER_STYLE.destination.stroke)
+    expect(MARKER_STYLE.return.weight).toBeGreaterThan(MARKER_STYLE.destination.weight)
+  })
+
+  it('重なっても両方が見えるよう、目的地を大きく先に描き、返却ポートを上に描く', () => {
+    expect(MARKER_STYLE.destination.radius).toBeGreaterThan(MARKER_STYLE.return.radius)
+    const { points } = buildMapModel(origin, destination, bikeRoute.bike_share)
+    const order = sortForDrawing(points).map((p) => p.kind)
+    expect(order.indexOf('return')).toBeGreaterThan(order.indexOf('destination'))
+    expect(order.indexOf('rent')).toBeGreaterThan(order.indexOf('origin'))
+    expect(points.map((p) => p.kind)).toEqual(['origin', 'rent', 'return', 'destination']) // 元の配列は変えない
   })
 })

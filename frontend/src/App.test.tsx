@@ -441,6 +441,43 @@ describe('検索の失敗（ダミーの結果を出さない）', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('想定外の応答')
   })
 
+  it('通信エラーのあと、同じ条件でもう一度検索できる（入力は保持し、結果に置き換わる）', async () => {
+    let reply: Handler = () => Promise.reject(new TypeError('Failed to fetch'))
+    const { fetchMock, user } = await searchFor(() => reply())
+    expect(await screen.findByRole('alert')).toHaveTextContent('通信エラー')
+    const button = screen.getByRole('button', { name: '経路を検索' })
+    expect(button).toBeEnabled()
+    expect(screen.getByTestId('origin-picked')).toHaveTextContent('梅田（JR大阪駅）')
+    reply = () => Promise.resolve(json(bikeRoute))
+    await user.click(button)
+    expect(await screen.findByRole('region', { name: '検索結果' })).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(calls(fetchMock, '/api/routes/search')).toHaveLength(2) // 自動リトライはしない（押した回数だけ）
+  })
+
+  it('応答が 35 秒ない場合は打ち切って「応答がありませんでした」と表示し、再検索できる', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const fetchMock = mockApi((init) => new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+      }))
+      render(<App />)
+      const user = await choosePresets('梅田（JR大阪駅）', '難波（なんば駅）')
+      await user.click(screen.getByRole('button', { name: '経路を検索' }))
+      expect(screen.getByRole('button', { name: '検索中…' })).toBeDisabled()
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(35_000)
+      })
+      const alert = await screen.findByRole('alert')
+      expect(alert).toHaveTextContent('通信エラー')
+      expect(alert).toHaveTextContent('応答がありませんでした')
+      expect(screen.getByRole('button', { name: '経路を検索' })).toBeEnabled()
+      expect(calls(fetchMock, '/api/routes/search')).toHaveLength(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('成功のあとに失敗したら、前回の結果を残さない', async () => {
     let reply = () => Promise.resolve(json(bikeRoute))
     const { user } = await searchFor(() => reply())

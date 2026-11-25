@@ -62,13 +62,13 @@ button:disabled { cursor: not-allowed; opacity: 0.6; }
 .count { grid-column: 2; color: var(--muted); font-size: 0.88rem; }
 .tag { font-size: 0.75rem; font-weight: 700; color: #fff; border-radius: 6px; padding: 2px 8px; }
 .tag-rent { background: #15803d; }
-.tag-return { background: #c2410c; }
+.tag-return { background: #fb923c; color: #431407; }
 .note { color: var(--muted); font-size: 0.8rem; margin-top: 8px; }
 
 .map { margin: 0; }
 .map-canvas { height: 320px; border-radius: 10px; }
 .legend { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 8px 0 0; padding: 0; font-size: 0.85rem; }
-.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; }
+.dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid transparent; margin-right: 4px; vertical-align: -1px; }
 
 .data-source { font-size: 0.85rem; color: var(--muted); }
 .data-source p + p { margin-top: 4px; }
